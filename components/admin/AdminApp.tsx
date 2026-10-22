@@ -17,7 +17,8 @@ import Reveal from "./Reveal";
 import Security from "./Security";
 import Preview from "./Preview";
 
-const TOKEN_KEY = "baby-reveal-admin";
+import { ADMIN_TOKEN_KEY as TOKEN_KEY } from "@/lib/session";
+
 const SELECTED_KEY = "baby-reveal-admin-invitation";
 
 export type Tab = "invitations" | "overview" | "guests" | "content" | "design" | "reveal" | "security";

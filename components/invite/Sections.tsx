@@ -241,7 +241,7 @@ function InfoCard({ icon: Icon, label, text, tone }: Note) {
   );
 }
 
-export function Details({ s, d }: { s: Settings; d: Dict }) {
+export function Details({ s, d, mapButton }: { s: Settings; d: Dict; mapButton: boolean }) {
   const date = formatDate(s.event_date, s.language);
 
   function addToCalendar() {
@@ -288,14 +288,17 @@ export function Details({ s, d }: { s: Settings; d: Dict }) {
         >
           <CalendarPlus size={16} /> {d.addToCalendar}
         </button>
-        <a
-          href={directionsUrl(s)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 rounded-full border border-ink/20 bg-white/70 px-5 py-3 font-sans text-xs font-medium uppercase tracking-[0.15em] text-ink transition hover:bg-white active:scale-95"
-        >
-          <Navigation size={16} /> {d.openMap}
-        </a>
+        {/* the map section has its own button; only show one here when that section is hidden */}
+        {mapButton && (
+          <a
+            href={directionsUrl(s)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 rounded-full border border-ink/20 bg-white/70 px-5 py-3 font-sans text-xs font-medium uppercase tracking-[0.15em] text-ink transition hover:bg-white active:scale-95"
+          >
+            <Navigation size={16} /> {d.openMap}
+          </a>
+        )}
       </InView>
 
       {notes.length > 0 && (

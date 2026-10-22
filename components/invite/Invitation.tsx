@@ -12,6 +12,7 @@ import Intro from "./Intro";
 import { Countdown, Details, Footer, HeroCard, MapSection, VoteMeter, Wishes, InView } from "./Sections";
 import Rsvp, { burstConfetti } from "./Rsvp";
 import { FloatingField, Balloon } from "./Decor";
+import Menu, { sectionAnchor } from "./Menu";
 
 const DEVICE_KEY = "baby-reveal-device";
 export const PREVIEW_MESSAGE = "baby-reveal:preview";
@@ -161,7 +162,7 @@ export default function Invitation({ slug, initial, preview = false }: { slug: s
 
   const render: Record<SectionId, () => React.ReactNode> = {
     countdown: () => !revealed && <Countdown s={s} d={d} />,
-    details: () => <Details s={s} d={d} />,
+    details: () => <Details s={s} d={d} mapButton={!s.sections.some((x) => x.id === "map" && x.visible)} />,
     map: () => <MapSection s={s} d={d} />,
     vote: () => <VoteMeter data={data} d={d} onPick={revealed ? () => {} : pick} />,
     rsvp: () =>
@@ -184,6 +185,12 @@ export default function Invitation({ slug, initial, preview = false }: { slug: s
     wishes: () => data.wishes && <Wishes wishes={data.wishes} d={d} />,
   };
 
+  // sections that actually render (hidden ones, and those that vanish after the reveal, get no menu entry)
+  const shown = s.sections
+    .filter((x) => x.visible)
+    .map((x) => x.id)
+    .filter((id) => !(revealed && (id === "countdown" || id === "rsvp")) && !(id === "wishes" && !data.wishes?.length));
+
   return (
     <main className="watercolor-bg paper-noise relative min-h-screen" dir={lang === "ar" ? "rtl" : "ltr"} style={themeVars(s.theme)}>
       <AnimatePresence>
@@ -193,13 +200,18 @@ export default function Invitation({ slug, initial, preview = false }: { slug: s
       </AnimatePresence>
 
       <FloatingField level={s.theme.decor} />
+      {showContent && <Menu s={s} d={d} sections={shown} />}
 
       {showContent && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }} className="relative">
-          {revealed && <RevealHero data={data} gender={revealed} d={d} />}
-          <HeroCard s={s} d={d} />
-          {s.sections.filter((x) => x.visible).map((x) => (
-            <div key={x.id}>{render[x.id]()}</div>
+          <div id={sectionAnchor("top")}>
+            {revealed && <RevealHero data={data} gender={revealed} d={d} />}
+            <HeroCard s={s} d={d} />
+          </div>
+          {shown.map((id) => (
+            <div key={id} id={sectionAnchor(id)} className="scroll-mt-4">
+              {render[id]()}
+            </div>
           ))}
           <InView className="flex justify-center pb-4 pt-6">
             <button

@@ -167,6 +167,17 @@ export default function Intro({
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.97 }}
       >
+        {phase === "idle" &&
+          [0, 1].map((i) => (
+            <motion.span
+              key={i}
+              aria-hidden
+              className="pointer-events-none absolute inset-x-[-18%] bottom-[-10%] top-[-6%] rounded-full border-2 border-gold/60"
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: [0.85, 1.15], opacity: [0.7, 0] }}
+              transition={{ duration: 2.2, delay: 1.4 + i * 1.1, repeat: Infinity, ease: "easeOut" }}
+            />
+          ))}
         <motion.div animate={box} className="origin-bottom">
           <GiftBox lidControls={lid} />
         </motion.div>
@@ -203,11 +214,17 @@ export default function Intro({
         animate={{ opacity: phase === "idle" ? 1 : 0 }}
         transition={{ delay: phase === "idle" ? 1.1 : 0 }}
       >
-        <span className="font-sans text-xs uppercase tracking-[0.3em] text-ink-soft">
-          {reveal ? d.tapToReveal : d.tapToOpen}
-        </span>
+        <motion.button
+          type="button"
+          onClick={open}
+          className="rounded-full bg-white/80 px-6 py-3 text-center font-sans text-base font-semibold text-ink shadow-[0_10px_30px_-12px_rgba(78,61,48,0.45)] ring-1 ring-gold/40 backdrop-blur sm:text-lg rtl:text-lg rtl:sm:text-xl"
+          animate={{ scale: [1, 1.04, 1] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        >
+          {reveal ? d.tapToReveal : d.tapToOpen} 🎁
+        </motion.button>
         <motion.span
-          className="text-2xl"
+          className="text-3xl"
           animate={{ y: [0, -6, 0] }}
           transition={{ duration: 1.4, repeat: Infinity }}
           aria-hidden

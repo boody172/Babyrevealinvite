@@ -1,11 +1,11 @@
 import type { Lang } from "./types";
 
 const en = {
-  tapToOpen: "Tap to open your invitation",
+  tapToOpen: "Tap the gift box to open your invitation",
   boyOrGirl: "Boy or Girl?",
   or: "or",
   waitIsOver: "The wait is over!",
-  tapToReveal: "Tap to reveal",
+  tapToReveal: "Tap the gift box to reveal",
   hostedBy: "with love,",
   forBaby: "for",
   countdownTitle: "Counting down to the big surprise",
@@ -64,14 +64,26 @@ const en = {
   directions: "Directions",
   prizeTitle: "Guessing prize",
   openInMaps: "Open in Google Maps",
+  menu: "Menu",
+  navTop: "The invitation",
+  navCountdown: "Countdown",
+  navDetails: "Details",
+  navMap: "Location",
+  navVote: "Boy or Girl?",
+  navRsvp: "RSVP & guess",
+  navWishes: "Wishes",
+  adminLogin: "Admin login",
+  password: "Password",
+  enter: "Enter",
+  wrongPassword: "Wrong password",
 };
 
 const ar: typeof en = {
-  tapToOpen: "اضغط لفتح الدعوة",
+  tapToOpen: "اضغط على الصندوق لفتح الدعوة",
   boyOrGirl: "ولد ولا بنت؟",
   or: "ولا",
   waitIsOver: "خلص الانتظار!",
-  tapToReveal: "اضغط لكشف المفاجأة",
+  tapToReveal: "اضغط على الصندوق لكشف المفاجأة",
   hostedBy: "بكل حب،",
   forBaby: "لـ",
   countdownTitle: "العد التنازلي للمفاجأة الكبيرة",
@@ -130,6 +142,18 @@ const ar: typeof en = {
   directions: "طريقة الوصول",
   prizeTitle: "جائزة التخمين",
   openInMaps: "افتح في جوجل ماب",
+  menu: "القائمة",
+  navTop: "الدعوة",
+  navCountdown: "العد التنازلي",
+  navDetails: "التفاصيل",
+  navMap: "اللوكيشن",
+  navVote: "ولد ولا بنت؟",
+  navRsvp: "تأكيد الحضور والتخمين",
+  navWishes: "الأمنيات",
+  adminLogin: "دخول لوحة التحكم",
+  password: "كلمة السر",
+  enter: "دخول",
+  wrongPassword: "كلمة السر غلط",
 };
 
 export const dict = { en, ar };
