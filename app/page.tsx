@@ -1,18 +1,9 @@
-import Invitation from "@/components/invite/Invitation";
-import { getSite } from "@/lib/api";
-import type { SiteData } from "@/lib/types";
+import InvitePage, { inviteMetadata } from "@/components/invite/InvitePage";
 
 export const dynamic = "force-dynamic";
 
-async function load(): Promise<SiteData | null> {
-  try {
-    return await getSite(null, { signal: AbortSignal.timeout(4000) });
-  } catch {
-    return null;
-  }
-}
+export const generateMetadata = () => inviteMetadata(null);
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ preview?: string }> }) {
-  const [data, params] = await Promise.all([load(), searchParams]);
-  return <Invitation initial={data} preview={params.preview === "1"} />;
+export default async function Home({ searchParams }: { searchParams: Promise<{ preview?: string }> }) {
+  return <InvitePage slug={null} preview={(await searchParams).preview === "1"} />;
 }

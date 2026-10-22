@@ -48,6 +48,7 @@ export const DEFAULT_THEME: Theme = {
   arabic_font: "ruqaa",
   decor: "full",
   intro: true,
+  card: { top: 14.5, bottom: 42, side: 19, backdrop: false }, // fits the bundled watercolor frame
 };
 
 /** Mix a hex color with white (amount 0..1 of white). */

@@ -71,8 +71,10 @@ export function withDefaults(raw: Partial<Settings> | null | undefined): Setting
     }
   }
   merged.theme = { ...DEFAULT_THEME, ...(raw?.theme ?? {}) };
+  merged.theme.card = { ...DEFAULT_THEME.card, ...(raw?.theme?.card ?? {}) };
   merged.labels = raw?.labels ?? {};
-  merged.images = raw?.images ?? {};
+  // older versions stored upload timestamps here; only media ids (strings) are valid now
+  merged.images = Object.fromEntries(Object.entries(raw?.images ?? {}).filter(([, v]) => typeof v === "string" && v)) as Settings["images"];
   if (!Array.isArray(merged.extras)) merged.extras = [];
   // keep saved order, drop unknown ids, append sections added in newer versions
   const saved = Array.isArray(raw?.sections) ? raw.sections.filter((s) => SECTION_IDS.includes(s.id)) : [];

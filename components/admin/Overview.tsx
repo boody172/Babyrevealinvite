@@ -6,6 +6,7 @@ import { Check, Copy, MessageCircle } from "lucide-react";
 import type { AdminData } from "@/lib/types";
 import { Card } from "./ui";
 import type { Tab } from "./AdminApp";
+import { inviteUrl } from "./Invitations";
 
 /* ---------------- overview ---------------- */
 
@@ -18,7 +19,7 @@ export default function Overview({ data, onTab }: { data: AdminData; onTab: (t: 
   const total = boys + girls;
   const boyPct = total ? Math.round((boys / total) * 100) : 50;
   const [copied, setCopied] = useState(false);
-  const url = typeof window !== "undefined" ? window.location.origin : "";
+  const url = inviteUrl(data.invitation.slug);
   const waText = encodeURIComponent(`${data.settings.title} 💗💙\nولد ولا بنت؟ افتح الدعوة وأكد حضورك وخمّن 👇\n${url}`);
 
   const stats = [

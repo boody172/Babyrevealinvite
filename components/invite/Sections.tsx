@@ -45,6 +45,7 @@ export function HeroCard({ s, d }: { s: Settings; d: Dict }) {
   const fade = useTransform(scrollYProgress, [0, 0.8], [1, 0.3]);
   const date = formatDate(s.event_date, s.language);
   const ar = s.language === "ar";
+  const card = s.theme.card;
 
   const item = {
     hidden: { opacity: 0, y: 16, filter: "blur(6px)" },
@@ -61,10 +62,11 @@ export function HeroCard({ s, d }: { s: Settings; d: Dict }) {
           className="relative overflow-hidden rounded-[28px] shadow-[0_40px_90px_-35px_rgba(78,61,48,0.45)] ring-1 ring-white/70"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl(s, "frame")} alt="" className="block aspect-[1055/1491] w-full select-none object-cover" draggable={false} fetchPriority="high" />
+          <img src={imageUrl(s, "frame")} alt="" className="block h-auto w-full select-none" draggable={false} fetchPriority="high" />
 
           <motion.div
-            className="absolute inset-x-[19%] top-[14.5%] bottom-[42%] flex flex-col items-center justify-center text-center"
+            className={`absolute flex flex-col items-center justify-center text-center ${card.backdrop ? "rounded-[6cqw] bg-white/75 px-[3cqw] backdrop-blur-sm" : ""}`}
+            style={{ top: `${card.top}%`, bottom: `${card.bottom}%`, left: `${card.side}%`, right: `${card.side}%` }}
             initial="hidden"
             animate="show"
             variants={{ show: { transition: { staggerChildren: 0.14, delayChildren: 0.5 } } }}

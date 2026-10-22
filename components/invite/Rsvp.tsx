@@ -35,12 +35,13 @@ const Rsvp = forwardRef<
     data: SiteData;
     d: Dict;
     device: string | null;
+    slug: string;
     preview?: boolean;
     guess: Gender | null;
     setGuess: (g: Gender) => void;
     onDone: (m: Mine) => void;
   }
->(function Rsvp({ data, d, device, preview, guess, setGuess, onDone }, ref) {
+>(function Rsvp({ data, d, device, slug, preview, guess, setGuess, onDone }, ref) {
   const s = data.settings;
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -60,7 +61,7 @@ const Rsvp = forwardRef<
     setBusy(true);
     try {
       // dashboard preview: show the full flow without writing a real RSVP
-      if (!preview) await submitRsvp({ name: name.trim(), phone, attending, guests, guess, message, device: device! });
+      if (!preview) await submitRsvp({ slug, name: name.trim(), phone, attending, guests, guess, message, device: device! });
       burstConfetti(guess);
       onDone({ name: name.trim(), guess, attending });
     } catch (err) {

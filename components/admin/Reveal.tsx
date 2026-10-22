@@ -20,7 +20,7 @@ export default function Reveal({ data, token, reload, toast }: { data: AdminData
     if (revealed && !confirm("متأكد؟ الموقع هيعرض النوع لكل الناس فوراً 🎉")) return;
     setBusy(true);
     try {
-      await admin.setReveal(token, gender, revealed);
+      await admin.reveal(token, data.invitation.id, gender, revealed);
       await reload();
       toast(revealed ? "تم كشف النوع 🎉" : "تم الحفظ ✓");
     } catch (e) {

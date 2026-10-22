@@ -194,7 +194,7 @@ export default function Guests({
                         {r.message && (
                           <IconBtn
                             title={r.show_message ? "إخفاء الرسالة" : "إظهار الرسالة"}
-                            onClick={() => act(() => admin.saveRsvp(token, { ...r, show_message: !r.show_message }), "تم")}
+                            onClick={() => act(() => admin.saveRsvp(token, data.invitation.id, { ...r, show_message: !r.show_message }), "تم")}
                           >
                             {r.show_message ? <Eye size={16} /> : <EyeOff size={16} />}
                           </IconBtn>
@@ -229,7 +229,7 @@ export default function Guests({
             onClose={() => setEditing(null)}
             onSave={async (r) => {
               const { created_at: _c, deleted: _d, ...payload } = r;
-              await act(() => admin.saveRsvp(token, payload), "تم الحفظ");
+              await act(() => admin.saveRsvp(token, data.invitation.id, payload), "تم الحفظ");
               setEditing(null);
             }}
           />

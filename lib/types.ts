@@ -21,6 +21,15 @@ export interface Theme {
   arabic_font: string;
   decor: "none" | "soft" | "full";
   intro: boolean;
+  card: CardLayout;
+}
+
+/** Where the text sits on the invitation card, in % of the card (each background has its own empty area). */
+export interface CardLayout {
+  top: number;
+  bottom: number;
+  side: number;
+  backdrop: boolean; // soft white panel behind the text for busy backgrounds
 }
 
 export interface MapPoint {
@@ -54,7 +63,7 @@ export interface Settings {
   sections: { id: SectionId; visible: boolean }[];
   theme: Theme;
   labels: Partial<Record<Lang, Record<string, string>>>;
-  images: Partial<Record<ImageKey, number>>; // upload timestamp, used as cache-buster
+  images: Partial<Record<ImageKey, string>>; // media library id; empty = bundled default
 }
 
 export interface Wish {
@@ -64,6 +73,7 @@ export interface Wish {
 }
 
 export interface SiteData {
+  slug: string;
   settings: Settings;
   revealed: boolean;
   gender?: Gender;
@@ -85,7 +95,34 @@ export interface Rsvp {
   created_at?: string;
 }
 
+export interface InvitationInfo {
+  id: string;
+  slug: string;
+  name: string;
+  archived: boolean;
+  is_home: boolean;
+}
+
+export interface InvitationSummary extends InvitationInfo {
+  created_at: string;
+  language: Lang | null;
+  baby_name: string | null;
+  event_date: string | null;
+  frame: string | null;
+  theme: Partial<Theme> | null;
+  responses: number;
+  attending: number;
+}
+
+export interface MediaItem {
+  id: string;
+  label: string;
+  size: number;
+  created_at: string;
+}
+
 export interface AdminData {
+  invitation: InvitationInfo;
   settings: Settings;
   secret_gender: Gender | null;
   revealed: boolean;

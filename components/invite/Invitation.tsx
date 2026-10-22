@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Share2 } from "lucide-react";
 import type { Gender, SectionId, Settings, SiteData } from "@/lib/types";
 import { t, type Dict } from "@/lib/i18n";
-import { getSite, imageUrl } from "@/lib/api";
+import { getInvite, imageUrl } from "@/lib/api";
 import { withDefaults } from "@/lib/defaults";
 import { themeVars } from "@/lib/theme";
 import Intro from "./Intro";
@@ -65,7 +65,7 @@ function RevealHero({ data, gender, d }: { data: SiteData; gender: Gender; d: Di
   );
 }
 
-export default function Invitation({ initial, preview = false }: { initial: SiteData | null; preview?: boolean }) {
+export default function Invitation({ slug, initial, preview = false }: { slug: string; initial: SiteData | null; preview?: boolean }) {
   const [data, setData] = useState<SiteData | null>(initial);
   const [opened, setOpened] = useState(false);
   const [device, setDevice] = useState<string | null>(null);
@@ -76,14 +76,15 @@ export default function Invitation({ initial, preview = false }: { initial: Site
 
   const load = useCallback(async (dev: string | null) => {
     try {
-      const fresh = await getSite(dev);
+      const fresh = await getInvite(slug, dev);
+      if (!fresh) return setFailed(true);
       // in dashboard preview, unsaved design edits win over the stored settings
       setData(draft.current ? { ...fresh, settings: draft.current } : fresh);
       setFailed(false);
     } catch {
       setFailed(true);
     }
-  }, []);
+  }, [slug]);
 
   useEffect(() => {
     const dev = preview ? null : getDevice();
@@ -132,7 +133,7 @@ export default function Invitation({ initial, preview = false }: { initial: Site
   }
 
   async function share() {
-    const url = window.location.origin;
+    const url = window.location.origin + window.location.pathname;
     try {
       if (navigator.share) await navigator.share({ title: `${s?.title ?? ""} — ${d.boyOrGirl}`, url });
       else await navigator.clipboard.writeText(url);
@@ -170,6 +171,7 @@ export default function Invitation({ initial, preview = false }: { initial: Site
           data={data}
           d={d}
           device={device}
+          slug={slug}
           preview={preview}
           guess={guess}
           setGuess={setGuess}
