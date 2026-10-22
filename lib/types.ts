@@ -1,9 +1,31 @@
 export type Gender = "boy" | "girl";
 export type Lang = "en" | "ar";
 
+export type SectionId = "countdown" | "details" | "map" | "vote" | "rsvp" | "wishes";
+export type ImageKey = "frame" | "bear_boy" | "bear_girl" | "scene";
+
 export interface ExtraBlock {
   title: string;
   text: string;
+}
+
+export interface Theme {
+  preset: string;
+  bg: string;
+  ink: string;
+  pink: string;
+  blue: string;
+  gold: string;
+  heading_font: string;
+  script_font: string;
+  arabic_font: string;
+  decor: "none" | "soft" | "full";
+  intro: boolean;
+}
+
+export interface MapPoint {
+  lat: number;
+  lng: number;
 }
 
 export interface Settings {
@@ -16,18 +38,22 @@ export interface Settings {
   event_date: string; // ISO with timezone offset
   venue: string;
   address: string;
+  directions: string;
   map_url: string;
+  map_point: MapPoint | null;
   dress_code: string;
+  prize: string;
   rsvp_deadline: string; // YYYY-MM-DD
   closing_note: string;
   extras: ExtraBlock[];
   rsvp_open: boolean;
   show_results: boolean;
-  show_wishes: boolean;
-  show_countdown: boolean;
-  show_details: boolean;
-  show_vote: boolean;
+  show_wishes?: boolean; // mirrored from sections for the SQL side
   ask_phone: boolean;
+  sections: { id: SectionId; visible: boolean }[];
+  theme: Theme;
+  labels: Partial<Record<Lang, Record<string, string>>>;
+  images: Partial<Record<ImageKey, number>>; // upload timestamp, used as cache-buster
 }
 
 export interface Wish {

@@ -60,6 +60,10 @@ const en = {
   share: "Share",
   scrollHint: "Scroll",
   moreInfo: "Good to know",
+  mapTitle: "Find us",
+  directions: "Directions",
+  prizeTitle: "Guessing prize",
+  openInMaps: "Open in Google Maps",
 };
 
 const ar: typeof en = {
@@ -122,11 +126,25 @@ const ar: typeof en = {
   share: "مشاركة",
   scrollHint: "انزل",
   moreInfo: "معلومات تهمك",
+  mapTitle: "اللوكيشن",
+  directions: "طريقة الوصول",
+  prizeTitle: "جائزة التخمين",
+  openInMaps: "افتح في جوجل ماب",
 };
 
 export const dict = { en, ar };
 export type Dict = typeof en;
-export const t = (lang: Lang): Dict => dict[lang] ?? en;
+
+/** UI strings for a language, with any admin overrides applied on top. */
+export function t(lang: Lang, overrides?: Record<string, string>): Dict {
+  const base = dict[lang] ?? en;
+  if (!overrides) return base;
+  const out = { ...base };
+  for (const [k, v] of Object.entries(overrides)) {
+    if (k in out && typeof v === "string" && v.trim()) (out as Record<string, string>)[k] = v;
+  }
+  return out;
+}
 
 export function formatDate(iso: string, lang: Lang) {
   const d = new Date(iso);

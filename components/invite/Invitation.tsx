@@ -3,15 +3,18 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Share2 } from "lucide-react";
-import type { Gender, SiteData } from "@/lib/types";
-import { t } from "@/lib/i18n";
-import { getSite } from "@/lib/api";
+import type { Gender, SectionId, Settings, SiteData } from "@/lib/types";
+import { t, type Dict } from "@/lib/i18n";
+import { getSite, imageUrl } from "@/lib/api";
+import { withDefaults } from "@/lib/defaults";
+import { themeVars } from "@/lib/theme";
 import Intro from "./Intro";
-import { Countdown, Details, Footer, HeroCard, VoteMeter, Wishes, InView } from "./Sections";
+import { Countdown, Details, Footer, HeroCard, MapSection, VoteMeter, Wishes, InView } from "./Sections";
 import Rsvp, { burstConfetti } from "./Rsvp";
 import { FloatingField, Balloon } from "./Decor";
 
 const DEVICE_KEY = "baby-reveal-device";
+export const PREVIEW_MESSAGE = "baby-reveal:preview";
 
 function getDevice(): string | null {
   try {
@@ -26,20 +29,14 @@ function getDevice(): string | null {
   }
 }
 
-function RevealHero({ data, gender }: { data: SiteData; gender: Gender }) {
-  const d = t(data.settings.language);
+function RevealHero({ data, gender, d }: { data: SiteData; gender: Gender; d: Dict }) {
   const boy = gender === "boy";
   const v = data.votes;
   const total = v ? v.boy + v.girl : 0;
-  const right = v ? v[gender] : 0;
   return (
     <section className={`relative overflow-hidden px-5 pb-16 pt-20 text-center ${boy ? "bg-blue-soft" : "bg-pink-soft"}`}>
-      <FloatingField density={16} />
-      <motion.p
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative mb-4 font-sans text-xs uppercase tracking-[0.4em] text-ink-soft"
-      >
+      <FloatingField level={data.settings.theme.decor} />
+      <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative mb-4 font-sans text-xs uppercase tracking-[0.4em] text-ink-soft">
         {data.settings.baby_name}
       </motion.p>
       <motion.h1
@@ -57,29 +54,31 @@ function RevealHero({ data, gender }: { data: SiteData; gender: Gender }) {
         transition={{ y: { duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }, opacity: { delay: 0.6 } }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={boy ? "/img/bear-boy.webp" : "/img/bear-girl.webp"} alt="" className="w-full" />
+        <img src={imageUrl(data.settings, boy ? "bear_boy" : "bear_girl")} alt="" className="w-full" />
       </motion.div>
       {total > 0 && (
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }} className="relative mt-6 font-serif text-2xl italic">
-          {right} / {total} {d.guessedRight}
+          {v![gender]} / {total} {d.guessedRight}
         </motion.p>
       )}
     </section>
   );
 }
 
-export default function Invitation({ initial }: { initial: SiteData | null }) {
+export default function Invitation({ initial, preview = false }: { initial: SiteData | null; preview?: boolean }) {
   const [data, setData] = useState<SiteData | null>(initial);
   const [opened, setOpened] = useState(false);
   const [device, setDevice] = useState<string | null>(null);
   const [guess, setGuess] = useState<Gender | null>(null);
   const [failed, setFailed] = useState(false);
   const rsvpRef = useRef<HTMLElement>(null);
+  const draft = useRef<Settings | null>(null);
 
   const load = useCallback(async (dev: string | null) => {
     try {
       const fresh = await getSite(dev);
-      setData(fresh);
+      // in dashboard preview, unsaved design edits win over the stored settings
+      setData(draft.current ? { ...fresh, settings: draft.current } : fresh);
       setFailed(false);
     } catch {
       setFailed(true);
@@ -87,16 +86,30 @@ export default function Invitation({ initial }: { initial: SiteData | null }) {
   }, []);
 
   useEffect(() => {
-    const dev = getDevice();
+    const dev = preview ? null : getDevice();
     setDevice(dev);
     load(dev);
     const id = setInterval(() => load(dev), 30000);
     return () => clearInterval(id);
-  }, [load]);
+  }, [load, preview]);
+
+  // Live preview: the dashboard posts its unsaved settings into this iframe.
+  useEffect(() => {
+    if (!preview) return;
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin || e.data?.type !== PREVIEW_MESSAGE) return;
+      draft.current = withDefaults(e.data.settings);
+      setData((prev) => (prev ? { ...prev, settings: draft.current! } : prev));
+    };
+    window.addEventListener("message", onMessage);
+    window.parent?.postMessage({ type: `${PREVIEW_MESSAGE}:ready` }, window.location.origin);
+    return () => window.removeEventListener("message", onMessage);
+  }, [preview]);
 
   const s = data?.settings;
   const lang = s?.language ?? "en";
-  const d = t(lang);
+  const d = t(lang, s?.labels?.[lang]);
+  const skipIntro = preview || s?.theme.intro === false;
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -104,14 +117,13 @@ export default function Invitation({ initial }: { initial: SiteData | null }) {
   }, [lang]);
 
   useEffect(() => {
-    document.body.style.overflow = opened ? "" : "hidden";
-  }, [opened]);
+    document.body.style.overflow = opened || skipIntro ? "" : "hidden";
+  }, [opened, skipIntro]);
 
   function handleOpen() {
     setOpened(true);
     window.scrollTo({ top: 0 });
-    if (data?.revealed && data.gender) setTimeout(() => burstConfetti(data.gender), 300);
-    else setTimeout(() => burstConfetti(), 400);
+    setTimeout(() => burstConfetti(data?.revealed ? data.gender : undefined), 350);
   }
 
   function pick(g: Gender) {
@@ -121,12 +133,9 @@ export default function Invitation({ initial }: { initial: SiteData | null }) {
 
   async function share() {
     const url = window.location.origin;
-    const text = `${s?.title ?? ""} — ${d.boyOrGirl}`;
     try {
-      if (navigator.share) await navigator.share({ title: text, url });
-      else {
-        await navigator.clipboard.writeText(url);
-      }
+      if (navigator.share) await navigator.share({ title: `${s?.title ?? ""} — ${d.boyOrGirl}`, url });
+      else await navigator.clipboard.writeText(url);
     } catch {}
   }
 
@@ -146,39 +155,50 @@ export default function Invitation({ initial }: { initial: SiteData | null }) {
     );
   }
 
-  const revealed = data.revealed && data.gender;
+  const revealed = data.revealed && data.gender ? data.gender : null;
+  const showContent = opened || skipIntro;
+
+  const render: Record<SectionId, () => React.ReactNode> = {
+    countdown: () => !revealed && <Countdown s={s} d={d} />,
+    details: () => <Details s={s} d={d} />,
+    map: () => <MapSection s={s} d={d} />,
+    vote: () => <VoteMeter data={data} d={d} onPick={revealed ? () => {} : pick} />,
+    rsvp: () =>
+      !revealed && (
+        <Rsvp
+          ref={rsvpRef}
+          data={data}
+          d={d}
+          device={device}
+          preview={preview}
+          guess={guess}
+          setGuess={setGuess}
+          onDone={(m) => {
+            setData((prev) => (prev ? { ...prev, mine: m } : prev));
+            if (!preview) setTimeout(() => load(device), 800);
+          }}
+        />
+      ),
+    wishes: () => data.wishes && <Wishes wishes={data.wishes} d={d} />,
+  };
 
   return (
-    <main className="watercolor-bg paper-noise relative min-h-screen" dir={lang === "ar" ? "rtl" : "ltr"}>
+    <main className="watercolor-bg paper-noise relative min-h-screen" dir={lang === "ar" ? "rtl" : "ltr"} style={themeVars(s.theme)}>
       <AnimatePresence>
-        {!opened && <Intro key="intro" d={d} onOpen={handleOpen} reveal={revealed ? data.gender : undefined} babyName={s.baby_name} />}
+        {!showContent && (
+          <Intro key="intro" d={d} onOpen={handleOpen} reveal={revealed ?? undefined} babyName={s.baby_name} decor={s.theme.decor} />
+        )}
       </AnimatePresence>
 
-      <FloatingField density={12} />
+      <FloatingField level={s.theme.decor} />
 
-      {opened && (
+      {showContent && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }} className="relative">
-          {revealed && <RevealHero data={data} gender={data.gender!} />}
+          {revealed && <RevealHero data={data} gender={revealed} d={d} />}
           <HeroCard s={s} d={d} />
-          {s.show_countdown && !revealed && <Countdown s={s} d={d} />}
-          {s.show_details && <Details s={s} d={d} />}
-          {s.show_vote && <VoteMeter data={data} d={d} onPick={revealed ? () => {} : pick} />}
-          {!revealed && (
-            <Rsvp
-              ref={rsvpRef}
-              data={data}
-              d={d}
-              device={device}
-              guess={guess}
-              setGuess={setGuess}
-              onDone={(m) => {
-                setData((prev) => (prev ? { ...prev, mine: m } : prev));
-                setTimeout(() => load(device), 800);
-              }}
-            />
-          )}
-          {s.show_wishes && data.wishes && <Wishes wishes={data.wishes} d={d} />}
-
+          {s.sections.filter((x) => x.visible).map((x) => (
+            <div key={x.id}>{render[x.id]()}</div>
+          ))}
           <InView className="flex justify-center pb-4 pt-6">
             <button
               onClick={share}

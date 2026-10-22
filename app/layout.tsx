@@ -12,6 +12,13 @@ import "@fontsource/cairo/600.css";
 import "@fontsource/cairo/700.css";
 import "@fontsource/aref-ruqaa/400.css";
 import "@fontsource/aref-ruqaa/700.css";
+// alternative fonts selectable from the dashboard (only downloaded when used)
+import "@fontsource/playfair-display/500.css";
+import "@fontsource/parisienne/400.css";
+import "@fontsource/allura/400.css";
+import "@fontsource/amiri/400.css";
+import "@fontsource/amiri/700.css";
+import "@fontsource/reem-kufi/500.css";
 import "./globals.css";
 
 export const viewport: Viewport = {

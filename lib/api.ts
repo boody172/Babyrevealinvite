@@ -1,4 +1,4 @@
-import type { AdminData, Rsvp, Settings, SiteData, Gender } from "./types";
+import type { AdminData, Rsvp, Settings, SiteData, Gender, ImageKey } from "./types";
 import { withDefaults } from "./defaults";
 
 // The publishable key is meant to be public; every table is locked behind RLS and
@@ -66,6 +66,21 @@ export const admin = {
   saveRsvp: (token: string, r: Partial<Rsvp>) => rpc<void>("admin_save_rsvp", { p_token: token, p_rsvp: r }),
   removeRsvp: (token: string, id: string, deleted = true) =>
     rpc<void>("admin_remove_rsvp", { p_token: token, p_id: id, p_deleted: deleted }),
+  setAsset: (token: string, key: ImageKey, mime: string, base64: string) =>
+    rpc<void>("admin_set_asset", { p_token: token, p_key: key, p_mime: mime, p_data: base64 }),
   changePassword: (token: string, oldPw: string, newPw: string) =>
     rpc<void>("admin_change_password", { p_token: token, p_old: oldPw, p_new: newPw }),
 };
+
+const DEFAULT_IMAGES: Record<ImageKey, string> = {
+  frame: "/img/frame.webp",
+  bear_boy: "/img/bear-boy.webp",
+  bear_girl: "/img/bear-girl.webp",
+  scene: "/img/scene.webp",
+};
+
+/** Uploaded image if the admin replaced it, otherwise the bundled default. */
+export function imageUrl(s: Settings, key: ImageKey) {
+  const v = s.images?.[key];
+  return v ? `/api/asset/${key}?v=${v}` : DEFAULT_IMAGES[key];
+}

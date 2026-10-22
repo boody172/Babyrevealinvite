@@ -7,17 +7,17 @@ import confetti from "canvas-confetti";
 import type { Dict } from "@/lib/i18n";
 import { formatDate } from "@/lib/i18n";
 import type { Gender, SiteData } from "@/lib/types";
-import { submitRsvp, ApiError } from "@/lib/api";
-import { SectionTitle, InView } from "./Sections";
+import { submitRsvp, ApiError, imageUrl } from "@/lib/api";
+import { SectionTitle, InView, PrizeBadge } from "./Sections";
 import { Heart } from "./Decor";
 
 export function burstConfetti(g?: Gender) {
-  const colors =
-    g === "boy"
-      ? ["#5d90d3", "#b2cdee", "#e3eefa", "#c9a46a", "#ffffff"]
-      : g === "girl"
-        ? ["#e0789a", "#f4bfcc", "#fbe3e9", "#c9a46a", "#ffffff"]
-        : ["#5d90d3", "#b2cdee", "#e0789a", "#f4bfcc", "#c9a46a"];
+    // confetti draws on canvas, so resolve the theme variables to real colors
+  const css = getComputedStyle(document.querySelector("main") ?? document.documentElement);
+  const v = (name: string) => css.getPropertyValue(name).trim() || "#c9a46a";
+  const boy = [v("--color-blue-deep"), v("--color-blue"), v("--color-blue-soft")];
+  const girl = [v("--color-pink-deep"), v("--color-pink"), v("--color-pink-soft")];
+  const colors = [...(g === "boy" ? boy : g === "girl" ? girl : [...boy.slice(0, 2), ...girl.slice(0, 2)]), v("--color-gold"), "#ffffff"];
   const end = Date.now() + 1200;
   (function frame() {
     confetti({ particleCount: 5, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, colors, scalar: 1.1 });
@@ -35,11 +35,12 @@ const Rsvp = forwardRef<
     data: SiteData;
     d: Dict;
     device: string | null;
+    preview?: boolean;
     guess: Gender | null;
     setGuess: (g: Gender) => void;
     onDone: (m: Mine) => void;
   }
->(function Rsvp({ data, d, device, guess, setGuess, onDone }, ref) {
+>(function Rsvp({ data, d, device, preview, guess, setGuess, onDone }, ref) {
   const s = data.settings;
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -55,10 +56,11 @@ const Rsvp = forwardRef<
     setError(null);
     if (!name.trim()) return setError(d.errName);
     if (!guess) return setError(d.errGuess);
-    if (!device) return setError(d.errGeneric);
+    if (!device && !preview) return setError(d.errGeneric);
     setBusy(true);
     try {
-      await submitRsvp({ name: name.trim(), phone, attending, guests, guess, message, device });
+      // dashboard preview: show the full flow without writing a real RSVP
+      if (!preview) await submitRsvp({ name: name.trim(), phone, attending, guests, guess, message, device: device! });
       burstConfetti(guess);
       onDone({ name: name.trim(), guess, attending });
     } catch (err) {
@@ -110,6 +112,11 @@ const Rsvp = forwardRef<
                   </span>
                 </p>
                 <p className="mt-2 font-serif text-xl italic">{mine.attending ? d.thanksAttending : d.thanksNotAttending}</p>
+                {s.prize && (
+                  <div className="mt-6 w-full">
+                    <PrizeBadge text={s.prize} d={d} />
+                  </div>
+                )}
                 <p className="mt-6 font-sans text-[11px] uppercase tracking-[0.2em] text-ink-soft/80">{d.alreadySent}</p>
               </motion.div>
             ) : !s.rsvp_open ? (
@@ -143,7 +150,7 @@ const Rsvp = forwardRef<
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={boy ? "/img/bear-boy.webp" : "/img/bear-girl.webp"}
+                            src={imageUrl(s, boy ? "bear_boy" : "bear_girl")}
                             alt=""
                             className={`soft-mask mx-auto h-24 object-contain transition sm:h-28 ${active ? "" : "opacity-80 grayscale-[30%]"}`}
                           />

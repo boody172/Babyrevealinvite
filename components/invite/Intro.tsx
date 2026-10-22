@@ -2,13 +2,13 @@
 
 import { AnimatePresence, motion, useAnimationControls } from "motion/react";
 import { useEffect, useState } from "react";
-import { Balloon, Heart, QuestionMark, Star, FloatingField } from "./Decor";
+import { Balloon, C, Heart, QuestionMark, Star, FloatingField } from "./Decor";
 import type { Dict } from "@/lib/i18n";
 import type { Gender } from "@/lib/types";
 
 function GiftBox({ lidControls }: { lidControls: ReturnType<typeof useAnimationControls> }) {
-  const left = "#f6c9d4";
-  const right = "#b9d3f1";
+  const left = C.pink;
+  const right = C.blue;
   return (
     <div className="relative h-[170px] w-[190px] sm:h-[200px] sm:w-[224px]">
       {/* lid */}
@@ -18,19 +18,19 @@ function GiftBox({ lidControls }: { lidControls: ReturnType<typeof useAnimationC
         className="absolute -top-2 left-0 z-20 w-full origin-bottom-left"
         aria-hidden
       >
-        <rect x="4" y="22" width="216" height="40" rx="6" fill={left} />
-        <rect x="112" y="22" width="108" height="40" rx="6" fill={right} />
+        <rect x="4" y="22" width="216" height="40" rx="6" style={{ fill: left }} />
+        <rect x="112" y="22" width="108" height="40" rx="6" style={{ fill: right }} />
         <rect x="104" y="22" width="16" height="40" fill="#fff" opacity="0.85" />
         <rect x="4" y="54" width="216" height="8" fill="#000" opacity="0.05" />
         {/* bow */}
-        <path d="M112 24 C 80 -6, 58 14, 84 24 Z" fill="#f2a9bd" />
-        <path d="M112 24 C 144 -6, 166 14, 140 24 Z" fill="#8fb6e8" />
-        <circle cx="112" cy="21" r="8" fill="#f8d9e1" stroke="#fff" strokeWidth="2" />
+        <path d="M112 24 C 80 -6, 58 14, 84 24 Z" style={{ fill: C.pinkDeep }} opacity="0.7" />
+        <path d="M112 24 C 144 -6, 166 14, 140 24 Z" style={{ fill: C.blueDeep }} opacity="0.7" />
+        <circle cx="112" cy="21" r="8" style={{ fill: C.pinkSoft }} stroke="#fff" strokeWidth="2" />
       </motion.svg>
       {/* body */}
       <svg viewBox="0 0 224 150" className="absolute bottom-0 left-0 w-full" aria-hidden>
-        <rect x="16" y="0" width="96" height="150" rx="4" fill={left} />
-        <rect x="112" y="0" width="96" height="150" rx="4" fill={right} />
+        <rect x="16" y="0" width="96" height="150" rx="4" style={{ fill: left }} />
+        <rect x="112" y="0" width="96" height="150" rx="4" style={{ fill: right }} />
         <rect x="104" y="0" width="16" height="150" fill="#fff" opacity="0.85" />
         <rect x="16" y="0" width="192" height="12" fill="#000" opacity="0.06" />
         {[
@@ -79,9 +79,9 @@ function BurstItem({ el }: { el: string }) {
     case "bb2":
       return <Balloon color="blue" size={46} dotted={el === "bb2"} />;
     case "h1":
-      return <Heart size={22} color="#f2a7bb" />;
+      return <Heart size={22} color={C.pink} />;
     case "h2":
-      return <Heart size={22} color="#9bbde9" />;
+      return <Heart size={22} color={C.blue} />;
     default:
       return <Star size={18} />;
   }
@@ -92,11 +92,13 @@ export default function Intro({
   onOpen,
   reveal,
   babyName,
+  decor,
 }: {
   d: Dict;
   onOpen: () => void;
   reveal?: Gender;
   babyName: string;
+  decor: "none" | "soft" | "full";
 }) {
   const [phase, setPhase] = useState<"idle" | "opening">("idle");
   const box = useAnimationControls();
@@ -127,7 +129,7 @@ export default function Intro({
       exit={{ opacity: 0, scale: 1.04, filter: "blur(6px)" }}
       transition={{ duration: 0.8 }}
     >
-      <FloatingField density={18} />
+      <FloatingField level={decor} boost={4} />
 
       <motion.p
         className="font-sans text-[11px] uppercase tracking-[0.35em] text-ink-soft"

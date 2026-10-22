@@ -12,7 +12,7 @@ async function load(): Promise<SiteData | null> {
   }
 }
 
-export default async function Page() {
-  const data = await load();
-  return <Invitation initial={data} />;
+export default async function Page({ searchParams }: { searchParams: Promise<{ preview?: string }> }) {
+  const [data, params] = await Promise.all([load(), searchParams]);
+  return <Invitation initial={data} preview={params.preview === "1"} />;
 }
