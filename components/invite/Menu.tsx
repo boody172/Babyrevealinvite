@@ -8,6 +8,7 @@ import type { SectionId, Settings } from "@/lib/types";
 import { admin } from "@/lib/api";
 import { ADMIN_TOKEN_KEY } from "@/lib/session";
 import { Balloon } from "./Decor";
+import { Txt } from "./Txt";
 
 const NAV: Record<SectionId, keyof Dict> = {
   countdown: "navCountdown",
@@ -98,7 +99,7 @@ export default function Menu({ s, d, sections }: { s: Settings; d: Dict; section
                   <X size={18} />
                 </button>
               </div>
-              <p className="font-script mt-4 text-4xl leading-snug">{s.baby_name}</p>
+              <p className="font-script mt-4 text-4xl leading-snug"><Txt k="c:baby_name">{s.baby_name}</Txt></p>
 
               <div className="mt-4 space-y-1">
                 {(["top", ...sections] as const).map((id, i) => (

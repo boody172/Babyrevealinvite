@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { Theme } from "./types";
+import type { SectionStyle, Theme } from "./types";
 
 export const FONTS = {
   heading: {
@@ -18,6 +18,15 @@ export const FONTS = {
     kufi: { label: "كوفي (Reem Kufi)", css: '"Reem Kufi", sans-serif' },
   },
 } as const;
+
+/** Every font, for styling one section at a time (Arabic fonts are listed too). */
+export const ALL_FONTS: Record<string, { label: string; css: string }> = {
+  ...FONTS.heading,
+  ...FONTS.script,
+  ...FONTS.arabic,
+  montserrat: { label: "Montserrat", css: '"Montserrat", sans-serif' },
+  cairo: { label: "القاهرة (Cairo)", css: '"Cairo", sans-serif' },
+};
 
 type Palette = Pick<Theme, "bg" | "ink" | "pink" | "blue" | "gold">;
 
@@ -84,4 +93,25 @@ export function themeVars(t: Theme): CSSProperties {
     "--font-script": `${pick(FONTS.script, t.script_font, "greatvibes")}, ${arabic}`,
     "--font-arabic-display": arabic,
   } as CSSProperties;
+}
+
+/** CSS variables for one styled section; it inherits the page theme for anything not set. */
+export function sectionVars(st: SectionStyle | undefined): CSSProperties | undefined {
+  if (!st) return undefined;
+  const v: Record<string, string | number> = {};
+  const head = st.heading_font && ALL_FONTS[st.heading_font]?.css;
+  const body = st.body_font && ALL_FONTS[st.body_font]?.css;
+  if (head) v["--font-display"] = v["--font-script"] = v["--font-arabic-display"] = head;
+  if (body) v["--font-sans"] = v["--font-serif"] = v["--font-arabic"] = body;
+  if (st.text) {
+    v["--color-ink"] = st.text;
+    v["--color-ink-soft"] = tint(st.text, 0.3);
+  }
+  if (st.accent) {
+    v["--color-gold"] = st.accent;
+    v["--color-gold-soft"] = tint(st.accent, 0.6);
+  }
+  if (st.bg) v.backgroundColor = st.bg;
+  if (st.scale && st.scale !== 100) v.zoom = st.scale / 100;
+  return Object.keys(v).length ? (v as CSSProperties) : undefined;
 }

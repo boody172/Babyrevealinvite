@@ -10,6 +10,7 @@ import type { Gender, SiteData } from "@/lib/types";
 import { submitRsvp, ApiError, imageUrl } from "@/lib/api";
 import { SectionTitle, InView, PrizeBadge } from "./Sections";
 import { Heart } from "./Decor";
+import { Txt } from "./Txt";
 
 export function burstConfetti(g?: Gender) {
     // confetti draws on canvas, so resolve the theme variables to real colors
@@ -81,7 +82,7 @@ const Rsvp = forwardRef<
         className={`pointer-events-none absolute inset-0 bg-gradient-to-b ${tint} to-transparent transition-colors duration-700`}
         aria-hidden
       />
-      <SectionTitle script={d.rsvpTitle} caps={deadline ? `${d.rsvpBy} ${deadline}` : undefined} />
+      <SectionTitle script={d.rsvpTitle} k="l:rsvpTitle" caps={deadline ? <><Txt k="l:rsvpBy">{d.rsvpBy}</Txt> {deadline}</> : undefined} />
 
       <InView className="relative mx-auto max-w-xl">
         <div className="glass relative overflow-hidden rounded-[32px] p-6 sm:p-9">
@@ -104,31 +105,31 @@ const Rsvp = forwardRef<
                   <PartyPopper size={36} strokeWidth={1.5} />
                 </motion.div>
                 <p className="font-script mt-4 text-5xl">
-                  {d.thanks} <bdi>{mine.name.split(" ")[0]}</bdi>!
+                  <Txt k="l:thanks">{d.thanks}</Txt> <bdi>{mine.name.split(" ")[0]}</bdi>!
                 </p>
                 <p className="mt-3 font-sans text-sm text-ink-soft">
-                  {d.thanksGuessed}{" "}
+                  <Txt k="l:thanksGuessed">{d.thanksGuessed}</Txt>{" "}
                   <span className={`font-semibold ${mine.guess === "boy" ? "text-blue-deep" : "text-pink-deep"}`}>
                     {mine.guess === "boy" ? d.boy : d.girl}
                   </span>
                 </p>
-                <p className="mt-2 font-serif text-xl italic">{mine.attending ? d.thanksAttending : d.thanksNotAttending}</p>
+                <p className="mt-2 font-serif text-xl italic">{mine.attending ? <Txt k="l:thanksAttending">{d.thanksAttending}</Txt> : <Txt k="l:thanksNotAttending">{d.thanksNotAttending}</Txt>}</p>
                 {s.prize && (
                   <div className="mt-6 w-full">
                     <PrizeBadge text={s.prize} d={d} />
                   </div>
                 )}
-                <p className="mt-6 font-sans text-[11px] uppercase tracking-[0.2em] text-ink-soft/80">{d.alreadySent}</p>
+                <p className="mt-6 font-sans text-[11px] uppercase tracking-[0.2em] text-ink-soft/80"><Txt k="l:alreadySent">{d.alreadySent}</Txt></p>
               </motion.div>
             ) : !s.rsvp_open ? (
               <motion.p key="closed" className="py-8 text-center font-serif text-xl italic">
-                {d.rsvpClosed}
+                <Txt k="l:rsvpClosed">{d.rsvpClosed}</Txt>
               </motion.p>
             ) : (
               <motion.form key="form" onSubmit={submit} exit={{ opacity: 0, y: -10 }} className="space-y-6" noValidate>
                 {/* Guess */}
                 <div>
-                  <Label>{d.yourGuess}</Label>
+                  <Label><Txt k="l:yourGuess">{d.yourGuess}</Txt></Label>
                   <div className="mt-3 grid grid-cols-2 gap-3">
                     {(["boy", "girl"] as const).map((g) => {
                       const active = guess === g;
@@ -156,7 +157,7 @@ const Rsvp = forwardRef<
                             className={`soft-mask mx-auto h-24 object-contain transition sm:h-28 ${active ? "" : "opacity-80 grayscale-[30%]"}`}
                           />
                           <span className={`font-script block text-4xl ${boy ? "text-blue-deep" : "text-pink-deep"}`}>
-                            {boy ? d.boy : d.girl}
+                            {boy ? <Txt k="l:boy">{d.boy}</Txt> : <Txt k="l:girl">{d.girl}</Txt>}
                           </span>
                           <AnimatePresence>
                             {active && (
@@ -178,7 +179,7 @@ const Rsvp = forwardRef<
                   </div>
                 </div>
 
-                <Field label={d.yourName}>
+                <Field label={<Txt k="l:yourName">{d.yourName}</Txt>}>
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -191,7 +192,7 @@ const Rsvp = forwardRef<
                 </Field>
 
                 {s.ask_phone && (
-                  <Field label={d.phone}>
+                  <Field label={<Txt k="l:phone">{d.phone}</Txt>}>
                     <input
                       value={phone}
                       onChange={(e) => setPhone(e.target.value.replace(/[^\d+\s-]/g, ""))}
@@ -206,7 +207,7 @@ const Rsvp = forwardRef<
                 )}
 
                 <div>
-                  <Label>{d.willYouAttend}</Label>
+                  <Label><Txt k="l:willYouAttend">{d.willYouAttend}</Txt></Label>
                   <div className="mt-3 grid grid-cols-2 gap-2 rounded-full bg-cream-2 p-1">
                     {[true, false].map((v) => (
                       <button
@@ -218,7 +219,7 @@ const Rsvp = forwardRef<
                         {attending === v && (
                           <motion.span layoutId="attend-pill" className="absolute inset-0 rounded-full bg-white shadow" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
                         )}
-                        <span className={`relative ${attending === v ? "text-ink" : "text-ink-soft"}`}>{v ? d.yes : d.no}</span>
+                        <span className={`relative ${attending === v ? "text-ink" : "text-ink-soft"}`}>{v ? <Txt k="l:yes">{d.yes}</Txt> : <Txt k="l:no">{d.no}</Txt>}</span>
                       </button>
                     ))}
                   </div>
@@ -227,7 +228,7 @@ const Rsvp = forwardRef<
                 <AnimatePresence initial={false}>
                   {attending && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                      <Label>{d.guestsCount}</Label>
+                      <Label><Txt k="l:guestsCount">{d.guestsCount}</Txt></Label>
                       <div className="mt-3 flex items-center justify-center gap-6">
                         <Stepper onClick={() => setGuests((g) => Math.max(1, g - 1))} aria-label="-">
                           <Minus size={18} />
@@ -251,7 +252,7 @@ const Rsvp = forwardRef<
                   )}
                 </AnimatePresence>
 
-                <Field label={d.messageLabel}>
+                <Field label={<Txt k="l:messageLabel">{d.messageLabel}</Txt>}>
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
@@ -284,7 +285,7 @@ const Rsvp = forwardRef<
                 >
                   <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
                   {busy ? <Loader2 className="animate-spin" size={18} /> : <Send size={16} className="rtl:-scale-x-100" />}
-                  {busy ? d.sending : d.send}
+                  {busy ? d.sending : <Txt k="l:send">{d.send}</Txt>}
                 </motion.button>
               </motion.form>
             )}
@@ -302,7 +303,7 @@ function Label({ children }: { children: React.ReactNode }) {
   return <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-soft">{children}</p>;
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <label className="block">
       <Label>{label}</Label>

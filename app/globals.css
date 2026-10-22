@@ -147,3 +147,29 @@ select {
     box-shadow: 0 0 0 4px rgba(201, 164, 106, 0.18);
   }
 }
+
+/* dashboard preview: click-to-edit texts */
+[data-edit-mode] [data-edit] {
+  cursor: text;
+  border-radius: 4px;
+  outline: 1.5px dashed transparent;
+  outline-offset: 2px;
+  transition: outline-color 0.15s, background-color 0.15s;
+}
+[data-edit-mode] [data-edit]:hover {
+  outline-color: var(--color-gold);
+  background: color-mix(in srgb, var(--color-gold) 12%, transparent);
+}
+[data-edit-mode] [data-edit][contenteditable="plaintext-only"] {
+  outline: 2px solid var(--color-gold);
+  background: #fff;
+  color: var(--color-ink);
+  -webkit-text-fill-color: var(--color-ink);
+}
+
+/* per-section alignment chosen in the dashboard */
+[data-align="start"] :is(.text-center, .text-start, .text-end) { text-align: start; }
+[data-align="end"] :is(.text-center, .text-start, .text-end) { text-align: end; }
+[data-align="center"] :is(.text-start, .text-end) { text-align: center; }
+[data-align="start"] .justify-center { justify-content: flex-start; }
+[data-align="end"] .justify-center { justify-content: flex-end; }

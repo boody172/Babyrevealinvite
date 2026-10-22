@@ -32,6 +32,20 @@ export interface CardLayout {
   backdrop: boolean; // soft white panel behind the text for busy backgrounds
 }
 
+/** Parts of the page that can be styled one by one from the dashboard. */
+export type StyleTarget = "hero" | SectionId | "footer";
+
+/** Per-section design overrides; anything left empty follows the invitation's theme. */
+export interface SectionStyle {
+  heading_font?: string; // key of FONTS.any
+  body_font?: string;
+  scale?: number; // text size in %, 100 = normal
+  text?: string; // text color
+  accent?: string; // gold accents (dividers, small titles)
+  bg?: string; // section background color
+  align?: "start" | "center" | "end";
+}
+
 export interface MapPoint {
   lat: number;
   lng: number;
@@ -74,6 +88,7 @@ export interface Settings {
   images: Partial<Record<ImageKey, string>>; // media library id; empty = bundled default
   video: VideoSettings;
   video_title: string;
+  section_styles: Partial<Record<StyleTarget, SectionStyle>>;
 }
 
 /** Texts that are written per language. */

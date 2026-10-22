@@ -125,7 +125,7 @@ export default function VideoSection({ s, d }: { s: Settings; d: Dict }) {
   const poster = s.video.poster ? mediaUrl(s.video.poster) : undefined;
   return (
     <section className="relative px-5 py-16">
-      <SectionTitle script={s.video_title || d.navVideo} />
+      <SectionTitle script={s.video_title || d.navVideo} k={s.video_title ? "c:video_title" : "l:navVideo"} />
       <InView className="mx-auto max-w-3xl">
         <div className="glass rounded-[28px] p-2">
           {embed.kind === "file" ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useScroll, useTransform, AnimatePresence } from "motion/react";
+import { animate, motion, useInView, useScroll, useTransform, AnimatePresence } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { CalendarDays, Clock3, MapPin, CalendarPlus, Navigation, Shirt, Sparkles, DoorOpen, Gift } from "lucide-react";
 import type { Dict } from "@/lib/i18n";
@@ -9,6 +9,7 @@ import type { Gender, Settings, SiteData, Wish } from "@/lib/types";
 import { imageUrl } from "@/lib/api";
 import { directionsUrl, embedUrl } from "@/lib/maps";
 import { Balloon, C, GoldDivider, Heart, Star } from "./Decor";
+import { Txt } from "./Txt";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -16,8 +17,8 @@ export function InView({ children, delay = 0, className = "", y = 30 }: { childr
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y, filter: "blur(4px)" }}
+      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.8, delay, ease: EASE }}
     >
@@ -26,11 +27,11 @@ export function InView({ children, delay = 0, className = "", y = 30 }: { childr
   );
 }
 
-export function SectionTitle({ script, caps }: { script: string; caps?: string }) {
+export function SectionTitle({ script, caps, k }: { script: string; caps?: React.ReactNode; k?: string }) {
   return (
     <InView className="mb-8 text-center">
       {caps && <p className="mx-auto max-w-xs font-sans text-[10px] uppercase leading-relaxed tracking-[0.3em] text-ink-soft sm:max-w-none">{caps}</p>}
-      <h2 className="font-script mt-3 text-5xl leading-tight text-ink rtl:mt-5 rtl:text-4xl rtl:leading-[1.5] sm:text-6xl rtl:sm:text-5xl">{script}</h2>
+      <h2 className="font-script mt-3 text-5xl leading-tight text-ink rtl:mt-5 rtl:text-4xl rtl:leading-[1.5] sm:text-6xl rtl:sm:text-5xl">{k ? <Txt k={k}>{script}</Txt> : script}</h2>
       <GoldDivider className="mt-3" />
     </InView>
   );
@@ -72,10 +73,10 @@ export function HeroCard({ s, d }: { s: Settings; d: Dict }) {
             variants={{ show: { transition: { staggerChildren: 0.14, delayChildren: 0.5 } } }}
           >
             <motion.p variants={item} className="font-sans uppercase text-ink-soft" style={{ fontSize: ar ? "4cqw" : "2.6cqw", letterSpacing: "0.32em" }}>
-              {s.intro_line}
+              <Txt k="c:intro_line">{s.intro_line}</Txt>
             </motion.p>
             <motion.h1 variants={item} className="font-display mt-[1.5cqw] leading-[1.05] text-ink" style={{ fontSize: ar ? "8.6cqw" : "8cqw", letterSpacing: "0.02em" }}>
-              {s.title}
+              <Txt k="c:title">{s.title}</Txt>
             </motion.h1>
             <motion.div variants={item} className="my-[2cqw] flex items-center gap-[2cqw]">
               <span className="gold-line" style={{ width: "12cqw" }} />
@@ -83,10 +84,10 @@ export function HeroCard({ s, d }: { s: Settings; d: Dict }) {
               <span className="gold-line" style={{ width: "12cqw" }} />
             </motion.div>
             <motion.p variants={item} className="font-script text-shimmer leading-[1.15]" style={{ fontSize: ar ? "7.4cqw" : "8.4cqw" }}>
-              {s.baby_name}
+              <Txt k="c:baby_name">{s.baby_name}</Txt>
             </motion.p>
             <motion.p variants={item} className="font-serif mt-[1.5cqw] italic text-ink-soft" style={{ fontSize: "3.6cqw", lineHeight: 1.35 }}>
-              {s.tagline}
+              <Txt k="c:tagline">{s.tagline}</Txt>
             </motion.p>
             <motion.div variants={item} className="mt-[2.5cqw] flex items-stretch justify-center text-ink" style={{ fontSize: ar ? "3cqw" : "2.5cqw" }}>
               <div className="px-[2.5cqw]">
@@ -98,7 +99,7 @@ export function HeroCard({ s, d }: { s: Settings; d: Dict }) {
               </div>
               <span className="w-px bg-gold/60" />
               <div className="flex flex-col justify-center px-[2.5cqw]">
-                <p className="font-sans uppercase tracking-[0.2em] text-ink-soft">{d.time}</p>
+                <p className="font-sans uppercase tracking-[0.2em] text-ink-soft"><Txt k="l:time">{d.time}</Txt></p>
                 <p className="font-display" style={{ fontSize: "3.8cqw" }}>
                   {date.time}
                 </p>
@@ -126,10 +127,10 @@ export function HeroCard({ s, d }: { s: Settings; d: Dict }) {
         </motion.div>
 
         <motion.p className="mt-5 text-center font-sans text-[11px] uppercase tracking-[0.3em] text-ink-soft" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6 }}>
-          {d.hostedBy} <span className="font-script normal-case tracking-normal text-2xl text-ink">{s.parents}</span>
+          <Txt k="l:hostedBy">{d.hostedBy}</Txt> <span className="font-script normal-case tracking-normal text-2xl text-ink"><Txt k="c:parents">{s.parents}</Txt></span>
         </motion.p>
         <motion.div className="mx-auto mt-3 flex w-fit flex-col items-center text-ink-soft" animate={{ y: [0, 8, 0] }} transition={{ duration: 1.8, repeat: Infinity }} aria-hidden>
-          <span className="font-sans text-[10px] uppercase tracking-[0.3em]">{d.scrollHint}</span>
+          <span className="font-sans text-[10px] uppercase tracking-[0.3em]"><Txt k="l:scrollHint">{d.scrollHint}</Txt></span>
           <span className="mt-1 h-6 w-px bg-ink-soft/50" />
         </motion.div>
       </motion.div>
@@ -164,9 +165,9 @@ export function Countdown({ s, d }: { s: Settings; d: Dict }) {
 
   return (
     <section className="relative px-5 py-16">
-      <SectionTitle script={d.countdownTitle} />
+      <SectionTitle script={d.countdownTitle} k="l:countdownTitle" />
       {left?.done ? (
-        <InView className="text-center font-serif text-2xl italic">{d.itsToday}</InView>
+        <InView className="text-center font-serif text-2xl italic"><Txt k="l:itsToday">{d.itsToday}</Txt></InView>
       ) : (
         <div className="mx-auto grid max-w-md grid-cols-4 gap-3 sm:gap-4">
           {UNITS.map((u, i) => {
@@ -190,7 +191,9 @@ export function Countdown({ s, d }: { s: Settings; d: Dict }) {
                       {v === null ? "--" : String(v).padStart(2, "0")}
                     </motion.span>
                   </AnimatePresence>
-                  <span className="mt-1 font-sans text-[10px] uppercase tracking-[0.2em] text-ink-soft">{d[u]}</span>
+                  <span className="mt-1 font-sans text-[10px] uppercase tracking-[0.2em] text-ink-soft">
+                    <Txt k={`l:${u}`}>{d[u]}</Txt>
+                  </span>
                 </div>
               </InView>
             );
@@ -225,7 +228,7 @@ function icsFile(s: Settings) {
   ].join("\r\n");
 }
 
-type Note = { icon: typeof Shirt; label: string; text: string; tone: string };
+type Note = { icon: typeof Shirt; label: React.ReactNode; text: React.ReactNode; tone: string };
 
 function InfoCard({ icon: Icon, label, text, tone }: Note) {
   return (
@@ -254,18 +257,18 @@ export function Details({ s, d, mapButton }: { s: Settings; d: Dict; mapButton: 
   }
 
   const cards = [
-    { icon: CalendarDays, label: d.date, main: date.day, sub: `${date.weekday} · ${date.monthYear}`, tone: "bg-pink-soft text-pink-deep" },
-    { icon: Clock3, label: d.time, main: date.time, sub: "", tone: "bg-cream-2 text-gold" },
-    { icon: MapPin, label: d.place, main: s.venue, sub: s.address, tone: "bg-blue-soft text-blue-deep" },
+    { icon: CalendarDays, k: "date", label: d.date, main: date.day, sub: `${date.weekday} · ${date.monthYear}`, tone: "bg-pink-soft text-pink-deep" },
+    { icon: Clock3, k: "time", label: d.time, main: date.time, sub: "", tone: "bg-cream-2 text-gold" },
+    { icon: MapPin, k: "place", label: d.place, main: <Txt k="c:venue">{s.venue}</Txt>, sub: <Txt k="c:address">{s.address}</Txt>, tone: "bg-blue-soft text-blue-deep" },
   ];
   const notes: Note[] = [];
-  if (s.directions) notes.push({ icon: DoorOpen, label: d.directions, text: s.directions, tone: "bg-gradient-to-r from-blue-soft via-white to-blue-soft" });
-  if (s.dress_code) notes.push({ icon: Shirt, label: d.dressCode, text: s.dress_code, tone: "bg-gradient-to-r from-pink-soft via-white to-blue-soft" });
+  if (s.directions) notes.push({ icon: DoorOpen, label: <Txt k="l:directions">{d.directions}</Txt>, text: <Txt k="c:directions">{s.directions}</Txt>, tone: "bg-gradient-to-r from-blue-soft via-white to-blue-soft" });
+  if (s.dress_code) notes.push({ icon: Shirt, label: <Txt k="l:dressCode">{d.dressCode}</Txt>, text: <Txt k="c:dress_code">{s.dress_code}</Txt>, tone: "bg-gradient-to-r from-pink-soft via-white to-blue-soft" });
   for (const x of s.extras) if (x.text) notes.push({ icon: Sparkles, label: x.title || d.moreInfo, text: x.text, tone: "glass" });
 
   return (
     <section className="relative px-5 py-16">
-      <SectionTitle script={d.detailsTitle} />
+      <SectionTitle script={d.detailsTitle} k="l:detailsTitle" />
       <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-3">
         {cards.map((c, i) => (
           <InView key={c.label} delay={i * 0.1}>
@@ -273,7 +276,9 @@ export function Details({ s, d, mapButton }: { s: Settings; d: Dict; mapButton: 
               <span className={`mb-3 flex h-12 w-12 items-center justify-center rounded-full ${c.tone}`}>
                 <c.icon size={22} strokeWidth={1.6} />
               </span>
-              <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-ink-soft">{c.label}</p>
+              <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-ink-soft">
+                <Txt k={`l:${c.k}`}>{c.label}</Txt>
+              </p>
               <p className="font-display mt-2 text-2xl leading-tight">{c.main}</p>
               {c.sub && <p className="mt-1 font-sans text-xs text-ink-soft">{c.sub}</p>}
             </motion.div>
@@ -286,7 +291,7 @@ export function Details({ s, d, mapButton }: { s: Settings; d: Dict; mapButton: 
           onClick={addToCalendar}
           className="flex items-center gap-2 rounded-full bg-ink px-5 py-3 font-sans text-xs font-medium uppercase tracking-[0.15em] text-cream transition hover:opacity-90 active:scale-95"
         >
-          <CalendarPlus size={16} /> {d.addToCalendar}
+          <CalendarPlus size={16} /> <Txt k="l:addToCalendar">{d.addToCalendar}</Txt>
         </button>
         {/* the map section has its own button; only show one here when that section is hidden */}
         {mapButton && (
@@ -296,7 +301,7 @@ export function Details({ s, d, mapButton }: { s: Settings; d: Dict; mapButton: 
             rel="noopener noreferrer"
             className="flex items-center gap-2 rounded-full border border-ink/20 bg-white/70 px-5 py-3 font-sans text-xs font-medium uppercase tracking-[0.15em] text-ink transition hover:bg-white active:scale-95"
           >
-            <Navigation size={16} /> {d.openMap}
+            <Navigation size={16} /> <Txt k="l:openMap">{d.openMap}</Txt>
           </a>
         )}
       </InView>
@@ -320,7 +325,7 @@ export function MapSection({ s, d }: { s: Settings; d: Dict }) {
   const [loaded, setLoaded] = useState(false);
   return (
     <section className="relative px-5 py-16">
-      <SectionTitle script={d.mapTitle} />
+      <SectionTitle script={d.mapTitle} k="l:mapTitle" />
       <InView className="mx-auto max-w-3xl">
         <div className="glass overflow-hidden rounded-[28px] p-2">
           <div className="relative aspect-[4/3] overflow-hidden rounded-[22px] bg-cream-2 sm:aspect-[16/9]">
@@ -341,7 +346,7 @@ export function MapSection({ s, d }: { s: Settings; d: Dict }) {
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3">
             <div className="min-w-0">
-              <p className="font-display text-lg leading-tight">{s.venue}</p>
+              <p className="font-display text-lg leading-tight"><Txt k="c:venue">{s.venue}</Txt></p>
               <p className="font-sans text-xs text-ink-soft">{[s.address, s.directions].filter(Boolean).join(" · ")}</p>
             </div>
             <a
@@ -350,7 +355,7 @@ export function MapSection({ s, d }: { s: Settings; d: Dict }) {
               rel="noopener noreferrer"
               className="flex items-center gap-2 rounded-full bg-ink px-4 py-2.5 font-sans text-xs font-medium text-cream active:scale-95"
             >
-              <Navigation size={14} /> {d.openInMaps}
+              <Navigation size={14} /> <Txt k="l:openInMaps">{d.openInMaps}</Txt>
             </a>
           </div>
         </div>
@@ -379,8 +384,8 @@ export function PrizeBadge({ text, d }: { text: string; d: Dict }) {
         <Gift size={20} />
       </motion.span>
       <div className="min-w-0">
-        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.25em] text-gold">{d.prizeTitle}</p>
-        <p className="font-serif text-lg font-semibold leading-snug">{text}</p>
+        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.25em] text-gold"><Txt k="l:prizeTitle">{d.prizeTitle}</Txt></p>
+        <p className="font-serif text-lg font-semibold leading-snug"><Txt k="c:prize">{text}</Txt></p>
       </div>
     </motion.div>
   );
@@ -388,11 +393,32 @@ export function PrizeBadge({ text, d }: { text: string; d: Dict }) {
 
 /* ---------------- Vote meter ---------------- */
 
+/** Counts up to `to` the first time it scrolls into view (and eases to new values after that). */
+function CountUp({ to, className }: { to: number; className?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const seen = useInView(ref, { once: true, margin: "-40px" });
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!seen) return;
+    const c = animate(n, to, { duration: 1.6, ease: EASE, onUpdate: (x) => setN(Math.round(x)) });
+    return () => c.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seen, to]);
+  return (
+    <span ref={ref} className={`tabular-nums ${className ?? ""}`}>
+      {n}
+      <span className="text-[0.5em] align-top">%</span>
+    </span>
+  );
+}
+
 export function VoteMeter({ data, d, onPick }: { data: SiteData; d: Dict; onPick: (g: Gender) => void }) {
   const s = data.settings;
   const v = data.votes;
   const total = v ? v.boy + v.girl : 0;
   const boyPct = total ? Math.round((v!.boy / total) * 100) : 50;
+  const girlPct = 100 - boyPct;
+  const leader: Gender | null = !total || boyPct === 50 ? null : boyPct > 50 ? "boy" : "girl";
 
   const bear = (g: Gender) => (
     <motion.button
@@ -410,6 +436,39 @@ export function VoteMeter({ data, d, onPick }: { data: SiteData; d: Dict; onPick
     </motion.button>
   );
 
+  const side = (g: Gender) => {
+    const boy = g === "boy";
+    const count = v ? v[g] : 0;
+    return (
+      <motion.div
+        className={`relative flex-1 rounded-[26px] px-3 py-5 text-center ${boy ? "bg-blue-soft/80" : "bg-pink-soft/80"}`}
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.8, delay: boy ? 0 : 0.12, ease: EASE }}
+      >
+        {leader === g && (
+          <motion.span
+            initial={{ scale: 0, rotate: -20 }}
+            whileInView={{ scale: 1, rotate: 0 }}
+            viewport={{ once: true }}
+            transition={{ type: "spring", stiffness: 260, damping: 14, delay: 1.4 }}
+            className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gold px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.15em] text-white shadow"
+          >
+            <Txt k="l:leading">{d.leading}</Txt>
+          </motion.span>
+        )}
+        <p className={`font-script text-3xl sm:text-4xl ${boy ? "text-blue-deep" : "text-pink-deep"}`}>
+          <Txt k={boy ? "l:boy" : "l:girl"}>{boy ? d.boy : d.girl}</Txt>
+        </p>
+        <CountUp to={boy ? boyPct : girlPct} className={`font-display block text-5xl leading-none sm:text-6xl ${boy ? "text-blue-deep" : "text-pink-deep"}`} />
+        <p className="mt-2 font-sans text-[11px] text-ink-soft">
+          {count} {count === 1 ? d.vote : d.votes}
+        </p>
+      </motion.div>
+    );
+  };
+
   return (
     <section className="relative overflow-hidden px-5 py-16">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,var(--color-blue-soft),transparent_40%,transparent_60%,var(--color-pink-soft))] rtl:bg-[linear-gradient(270deg,var(--color-blue-soft),transparent_40%,transparent_60%,var(--color-pink-soft))]" />
@@ -418,11 +477,11 @@ export function VoteMeter({ data, d, onPick }: { data: SiteData; d: Dict; onPick
           {bear("boy")}
           <InView className="flex-1 pb-6 text-center">
             <p className="font-script leading-tight">
-              <span className="block text-5xl text-blue-deep sm:text-7xl">{d.boy}</span>
-              <span className="block text-2xl text-gold sm:text-3xl">{d.or}</span>
-              <span className="block text-5xl text-pink-deep sm:text-7xl">{d.girl}</span>
+              <span className="block text-5xl text-blue-deep sm:text-7xl"><Txt k="l:boy">{d.boy}</Txt></span>
+              <span className="block text-2xl text-gold sm:text-3xl"><Txt k="l:or">{d.or}</Txt></span>
+              <span className="block text-5xl text-pink-deep sm:text-7xl"><Txt k="l:girl">{d.girl}</Txt></span>
             </p>
-            <p className="mt-4 font-display text-xs tracking-[0.25em] text-ink-soft sm:text-sm">{d.castVote.toUpperCase()}</p>
+            <p className="mt-4 font-display text-xs uppercase tracking-[0.25em] text-ink-soft sm:text-sm"><Txt k="l:castVote">{d.castVote}</Txt></p>
           </InView>
           {bear("girl")}
         </div>
@@ -430,16 +489,15 @@ export function VoteMeter({ data, d, onPick }: { data: SiteData; d: Dict; onPick
         <div className="gold-line my-6" />
 
         {v ? (
-          <InView>
-            <div className="flex justify-between font-sans text-sm" dir="ltr">
-              <span className="font-semibold text-blue-deep">
-                {d.boy} · {boyPct}%
-              </span>
-              <span className="font-semibold text-pink-deep">
-                {100 - boyPct}% · {d.girl}
-              </span>
+          <div>
+            <p className="mb-5 text-center font-sans text-[10px] font-semibold uppercase tracking-[0.3em] text-ink-soft">
+              <Txt k="l:voteResults">{d.voteResults}</Txt>
+            </p>
+            <div className="flex gap-3" dir="ltr">
+              {side("boy")}
+              {side("girl")}
             </div>
-            <div className="relative mt-3 flex h-5 overflow-hidden rounded-full bg-white shadow-inner" dir="ltr">
+            <div className="relative mt-5 flex h-4 overflow-hidden rounded-full bg-white shadow-inner" dir="ltr">
               <motion.div
                 className="h-full bg-gradient-to-r from-blue to-blue-deep"
                 initial={{ width: "50%" }}
@@ -450,18 +508,20 @@ export function VoteMeter({ data, d, onPick }: { data: SiteData; d: Dict; onPick
               <div className="h-full flex-1 bg-gradient-to-r from-pink-deep to-pink" />
               <motion.span
                 className="absolute top-1/2 -translate-y-1/2"
-                initial={{ left: "calc(50% - 10px)" }}
-                whileInView={{ left: `calc(${boyPct}% - 10px)` }}
+                initial={{ left: "calc(50% - 9px)" }}
+                whileInView={{ left: `calc(${boyPct}% - 9px)` }}
                 viewport={{ once: true }}
                 transition={{ duration: 1.6, ease: EASE }}
               >
-                <Heart size={20} color="#fff" />
+                <Heart size={18} color="#fff" />
               </motion.span>
             </div>
-            <p className="mt-3 text-center font-sans text-xs text-ink-soft">{total === 0 ? d.noVotesYet : `${total} ${total === 1 ? d.vote : d.votes}`}</p>
-          </InView>
+            <p className="mt-3 text-center font-sans text-xs text-ink-soft">
+              {total === 0 ? <Txt k="l:noVotesYet">{d.noVotesYet}</Txt> : `${total} ${total === 1 ? d.vote : d.votes}`}
+            </p>
+          </div>
         ) : (
-          <InView className="text-center font-serif text-xl italic text-ink-soft">{d.resultsSecret}</InView>
+          <InView className="text-center font-serif text-xl italic text-ink-soft"><Txt k="l:resultsSecret">{d.resultsSecret}</Txt></InView>
         )}
 
         {!data.revealed && (
@@ -480,7 +540,7 @@ export function Wishes({ wishes, d }: { wishes: Wish[]; d: Dict }) {
   if (!wishes.length) return null;
   return (
     <section className="relative px-5 py-16">
-      <SectionTitle script={d.wishesTitle} />
+      <SectionTitle script={d.wishesTitle} k="l:wishesTitle" />
       <div className="mx-auto max-w-4xl columns-1 gap-4 sm:columns-2 lg:columns-3">
         {wishes.map((w, i) => (
           <InView key={i} delay={Math.min(i, 8) * 0.06} className="mb-4 break-inside-avoid">
@@ -509,8 +569,8 @@ export function Footer({ s }: { s: Settings }) {
   return (
     <footer className="relative mt-6 overflow-hidden">
       <InView className="relative z-10 px-6 text-center">
-        <p className="font-script text-shimmer text-4xl leading-snug sm:text-5xl">{s.closing_note}</p>
-        <p className="mt-2 font-sans text-[11px] uppercase tracking-[0.3em] text-ink-soft">{s.parents}</p>
+        <p className="font-script text-shimmer text-4xl leading-snug sm:text-5xl"><Txt k="c:closing_note">{s.closing_note}</Txt></p>
+        <p className="mt-2 font-sans text-[11px] uppercase tracking-[0.3em] text-ink-soft"><Txt k="c:parents">{s.parents}</Txt></p>
       </InView>
       <div className="relative mx-auto -mt-2 max-w-3xl">
         {/* eslint-disable-next-line @next/next/no-img-element */}

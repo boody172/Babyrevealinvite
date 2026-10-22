@@ -29,6 +29,7 @@ const shared = {
   images: {},
   translations: {},
   video: { url: "", poster: "", autoplay: false },
+  section_styles: {},
 };
 
 export const DEFAULT_CONTENT: Record<Lang, Settings> = {
@@ -80,6 +81,7 @@ export function withDefaults(raw: Partial<Settings> | null | undefined): Setting
   merged.theme = { ...DEFAULT_THEME, ...(raw?.theme ?? {}) };
   merged.theme.card = { ...DEFAULT_THEME.card, ...(raw?.theme?.card ?? {}) };
   merged.labels = raw?.labels ?? {};
+  merged.section_styles = raw?.section_styles && typeof raw.section_styles === "object" ? raw.section_styles : {};
   // older versions stored upload timestamps here; only media ids (strings) are valid now
   merged.images = Object.fromEntries(Object.entries(raw?.images ?? {}).filter(([, v]) => typeof v === "string" && v)) as Settings["images"];
   if (!Array.isArray(merged.extras)) merged.extras = [];

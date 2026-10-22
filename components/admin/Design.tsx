@@ -4,8 +4,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Eye, EyeOff, Film, ImageUp, Images, Loader2, RotateCcw, Trash2, X } from "lucide-react";
 import { parseVideo } from "@/components/invite/VideoSection";
-import type { CardLayout, ImageKey, MediaItem, Settings, Theme } from "@/lib/types";
-import { DEFAULT_THEME, FONTS, PRESETS } from "@/lib/theme";
+import type { CardLayout, ImageKey, MediaItem, SectionStyle, Settings, StyleTarget, Theme } from "@/lib/types";
+import { ALL_FONTS, DEFAULT_THEME, FONTS, PRESETS } from "@/lib/theme";
 import { SECTION_LABELS } from "@/lib/defaults";
 import { admin, imageUrl, mediaUrl } from "@/lib/api";
 import { compressImage } from "@/lib/image";
@@ -258,6 +258,106 @@ function VideoCard({ s, set, token, toast }: { s: Settings; set: Setter; token: 
   );
 }
 
+/** A color that can also be "not set" (then the theme color is used). */
+function OptionalColor({ label, value, fallback, onChange }: { label: string; value?: string; fallback: string; onChange: (v: string | undefined) => void }) {
+  return (
+    <div className="flex items-center gap-2 rounded-2xl bg-cream p-2.5">
+      <input type="color" value={value ?? fallback} onChange={(e) => onChange(e.target.value)} className="h-9 w-9 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0" />
+      <span className="flex-1 text-xs font-semibold">
+        {label}
+        {!value && <span className="block text-[10px] font-normal text-ink-soft">زي الثيم</span>}
+      </span>
+      {value && (
+        <button onClick={() => onChange(undefined)} className="rounded-full p-1 text-ink-soft hover:bg-white" title="رجوع للثيم">
+          <X size={14} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+const STYLE_TARGETS: { id: StyleTarget; label: string }[] = [
+  { id: "hero", label: "كارت الدعوة" },
+  ...(Object.entries(SECTION_LABELS) as [StyleTarget, string][]).map(([id, label]) => ({ id, label })),
+  { id: "footer", label: "آخر الصفحة" },
+];
+
+/** Design one part of the page on its own: fonts, text size, colors, background and alignment. */
+function SectionStylesCard({ s, set }: { s: Settings; set: Setter }) {
+  const [target, setTarget] = useState<StyleTarget>("hero");
+  const st = s.section_styles[target] ?? {};
+  const put = (patch: Partial<SectionStyle>) => {
+    const next = { ...st, ...patch };
+    for (const k of Object.keys(next) as (keyof SectionStyle)[]) if (next[k] === undefined || next[k] === "") delete next[k];
+    set("section_styles", { ...s.section_styles, [target]: next });
+  };
+  const fontSelect = (key: "heading_font" | "body_font", label: string) => (
+    <Field label={label}>
+      <select className="input" value={st[key] ?? ""} onChange={(e) => put({ [key]: e.target.value || undefined })} style={{ fontFamily: st[key] ? ALL_FONTS[st[key]!]?.css : undefined }}>
+        <option value="">زي الثيم</option>
+        {Object.entries(ALL_FONTS).map(([k, f]) => (
+          <option key={k} value={k}>
+            {f.label}
+          </option>
+        ))}
+      </select>
+    </Field>
+  );
+  const customized = (id: StyleTarget) => Object.keys(s.section_styles[id] ?? {}).length > 0;
+
+  return (
+    <Card title="تصميم كل جزء لوحده" hint="اختار جزء من الصفحة وغيّر خطوطه وحجم الكلام وألوانه وخلفيته ومحاذاته. اللي تسيبه فاضي بيمشي على الثيم">
+      <div className="flex flex-wrap gap-2">
+        {STYLE_TARGETS.map((x) => (
+          <button
+            key={x.id}
+            onClick={() => setTarget(x.id)}
+            className={`relative rounded-full px-3 py-2 text-xs font-semibold transition ${target === x.id ? "bg-ink text-white" : "bg-cream text-ink"}`}
+          >
+            {x.label}
+            {customized(x.id) && <span className="absolute -top-0.5 end-0 h-2.5 w-2.5 rounded-full bg-pink-deep ring-2 ring-white" />}
+          </button>
+        ))}
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.div key={target} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }} className="mt-4 space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {fontSelect("heading_font", "خط العناوين")}
+            {fontSelect("body_font", "خط الكلام العادي")}
+          </div>
+          <Slider label="حجم الكلام" value={st.scale ?? 100} min={70} max={150} onChange={(v) => put({ scale: Math.round(v) === 100 ? undefined : Math.round(v) })} />
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <OptionalColor label="لون الكلام" value={st.text} fallback={s.theme.ink} onChange={(v) => put({ text: v })} />
+            <OptionalColor label="لون الزخارف" value={st.accent} fallback={s.theme.gold} onChange={(v) => put({ accent: v })} />
+            <OptionalColor label="لون الخلفية" value={st.bg} fallback={s.theme.bg} onChange={(v) => put({ bg: v })} />
+          </div>
+          <Field label="المحاذاة">
+            <div className="grid grid-cols-4 gap-2 rounded-2xl bg-cream p-1">
+              {(
+                [
+                  [undefined, "زي الثيم"],
+                  ["start", "بداية السطر"],
+                  ["center", "في النص"],
+                  ["end", "آخر السطر"],
+                ] as const
+              ).map(([v, l]) => (
+                <button key={l} onClick={() => put({ align: v })} className={`rounded-xl py-2 text-xs font-semibold ${st.align === v ? "bg-white shadow" : "text-ink-soft"}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </Field>
+          {customized(target) && (
+            <button onClick={() => set("section_styles", { ...s.section_styles, [target]: {} })} className="flex items-center gap-1 text-xs font-semibold text-ink-soft underline">
+              <RotateCcw size={12} /> رجّع الجزء ده زي الثيم
+            </button>
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </Card>
+  );
+}
+
 export default function Design({ s, set, token, toast }: { s: Settings; set: Setter; token: string; toast: ToastFn }) {
   const th = s.theme;
   const setTheme = (patch: Partial<Theme>) => set("theme", { ...th, ...patch });
@@ -362,6 +462,8 @@ export default function Design({ s, set, token, toast }: { s: Settings; set: Set
           <Toggle label="شاشة فتح الهدية في البداية" hint="لو قفلتها الدعوة هتفتح على طول" checked={th.intro} onChange={(v) => setTheme({ intro: v })} />
         </div>
       </Card>
+
+      <SectionStylesCard s={s} set={set} />
 
       <Card title="ترتيب أقسام الموقع" hint="رتّب الأقسام بالأسهم، واخفي أي قسم بالعين">
         <div className="space-y-2">

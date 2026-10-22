@@ -4,7 +4,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, ExternalLink, Gift, LayoutDashboard, Layers, Loader2, LogOut, Palette, PenLine, ShieldCheck, Users } from "lucide-react";
 import { admin, ApiError } from "@/lib/api";
-import type { AdminData, InvitationSummary, Lang, Settings } from "@/lib/types";
+import type { AdminData, InvitationSummary, Lang, Settings, TextKey } from "@/lib/types";
+import { TEXT_KEYS } from "@/lib/types";
 import { Balloon } from "@/components/invite/Decor";
 import { SaveBar, Toast, errText } from "./ui";
 import Login from "./Login";
@@ -15,7 +16,7 @@ import Content from "./Content";
 import Design from "./Design";
 import Reveal from "./Reveal";
 import Security from "./Security";
-import Preview from "./Preview";
+import Preview, { type OnEdit } from "./Preview";
 
 import { ADMIN_TOKEN_KEY as TOKEN_KEY } from "@/lib/session";
 
@@ -112,6 +113,21 @@ export default function AdminApp() {
     [data],
   );
   const setS = useCallback((fn: (p: Settings) => Settings) => setDraft((p) => fn(p ?? data!.settings)), [data]);
+
+  // a text changed by clicking it in the live preview: "c:<field>" is invitation content, "l:<label>" a UI label
+  const inlineEdit = useCallback<OnEdit>(
+    (key, value, lang) => {
+      const [kind, field] = [key.slice(0, 2), key.slice(2)];
+      setS((p) => {
+        if (kind === "l:") return { ...p, labels: { ...p.labels, [lang]: { ...p.labels[lang], [field]: value } } };
+        if (kind !== "c:" || !(TEXT_KEYS as readonly string[]).includes(field)) return p;
+        const f = field as TextKey;
+        if (lang === p.language) return { ...p, [f]: value };
+        return { ...p, translations: { ...p.translations, [lang]: { ...p.translations[lang], [f]: value } } };
+      });
+    },
+    [setS],
+  );
 
   function select(id: string, openTab?: Tab) {
     if (id !== selectedRef.current) {
@@ -239,7 +255,7 @@ export default function AdminApp() {
           )}
         </main>
 
-        {editing && <Preview slug={data.invitation.slug} settings={settings} lang={settings.languages.includes(editLang) ? editLang : settings.language} />}
+        {editing && <Preview slug={data.invitation.slug} settings={settings} lang={settings.languages.includes(editLang) ? editLang : settings.language} onEdit={inlineEdit} />}
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/5 bg-white/95 backdrop-blur md:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
