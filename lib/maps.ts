@@ -31,7 +31,8 @@ export function isGoogleMapsUrl(raw: string) {
 }
 
 function target(s: Settings) {
-  return s.map_point ? `${s.map_point.lat},${s.map_point.lng}` : `${s.venue} ${s.address}`;
+  if (s.map_point) return `${s.map_point.lat},${s.map_point.lng}`;
+  return s.map_query || `${s.venue} ${s.address}`;
 }
 
 export function embedUrl(s: Settings, lang: Lang) {
@@ -39,7 +40,8 @@ export function embedUrl(s: Settings, lang: Lang) {
 }
 
 export function directionsUrl(s: Settings) {
-  if (s.map_point) return `https://www.google.com/maps/dir/?api=1&destination=${s.map_point.lat},${s.map_point.lng}`;
+  // the admin's own share link opens the exact place in the Google Maps app
   if (s.map_url) return s.map_url;
+  if (s.map_point) return `https://www.google.com/maps/dir/?api=1&destination=${s.map_point.lat},${s.map_point.lng}`;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(target(s))}`;
 }

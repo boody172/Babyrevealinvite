@@ -17,6 +17,7 @@ const shared = {
   rsvp_deadline: "",
   map_url: "https://maps.app.goo.gl/iqFH2GzGipbpYpAj8",
   map_point: null,
+  map_query: "",
   rsvp_open: true,
   show_results: true,
   ask_phone: true,

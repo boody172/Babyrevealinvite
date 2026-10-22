@@ -41,6 +41,7 @@ export interface Settings {
   directions: string;
   map_url: string;
   map_point: MapPoint | null;
+  map_query: string; // place name from the share link when it has no coordinates
   dress_code: string;
   prize: string;
   rsvp_deadline: string; // YYYY-MM-DD

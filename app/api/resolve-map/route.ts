@@ -11,21 +11,17 @@ function linkInPage(html: string) {
 
 // Follows a Google Maps share link (e.g. maps.app.goo.gl/...) to find the pin's coordinates.
 export async function GET(req: Request) {
-  const params = new URL(req.url).searchParams;
-  let url = params.get("url")?.trim() ?? "";
-  if (params.get("debug") === "1" && isGoogleMapsUrl(url)) {
-    const r = await fetch(url, { redirect: "manual", headers: { "User-Agent": UA } });
-    const t = await r.text();
-    return NextResponse.json({ status: r.status, location: r.headers.get("location"), links: t.match(/https?:[^"'\s<>]{10,300}/g)?.slice(0, 40), len: t.length });
-  }
+  let url = new URL(req.url).searchParams.get("url")?.trim() ?? "";
   if (!isGoogleMapsUrl(url)) return NextResponse.json({ error: "not_google_maps" }, { status: 400 });
 
   const seen = new Set<string>();
+  let query: string | null = null; // place name Google gives instead of coordinates
   try {
     for (let hop = 0; hop < 8 && !seen.has(url); hop++) {
       seen.add(url);
       const point = parsePoint(decodeURIComponent(url));
       if (point) return NextResponse.json({ point, resolved: url });
+      query = new URL(url).searchParams.get("q") ?? query;
 
       const res = await fetch(url, { redirect: "manual", headers: { "User-Agent": UA, "Accept-Language": "en" }, signal: AbortSignal.timeout(6000) });
       const location = res.headers.get("location");
@@ -44,5 +40,6 @@ export async function GET(req: Request) {
   } catch {
     // fall through to the error below
   }
-  return NextResponse.json({ error: "no_coordinates", resolved: url }, { status: 422 });
+  if (query) return NextResponse.json({ query, resolved: url });
+  return NextResponse.json({ error: "no_location", resolved: url }, { status: 422 });
 }

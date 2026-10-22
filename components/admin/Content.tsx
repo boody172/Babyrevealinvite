@@ -23,7 +23,7 @@ function splitIso(iso: string) {
 }
 
 function LocationCard({ s, set }: { s: Settings; set: Setter }) {
-  const [state, setState] = useState<"idle" | "busy" | "ok" | "fail">(s.map_point ? "ok" : "idle");
+  const [state, setState] = useState<"idle" | "busy" | "ok" | "fail">(s.map_point || s.map_query ? "ok" : "idle");
 
   async function resolve(url = s.map_url) {
     if (!url) return;
@@ -31,13 +31,9 @@ function LocationCard({ s, set }: { s: Settings; set: Setter }) {
     try {
       const res = await fetch(`/api/resolve-map?url=${encodeURIComponent(url.trim())}`);
       const body = await res.json();
-      if (body.point) {
-        set("map_point", body.point);
-        setState("ok");
-      } else {
-        set("map_point", null);
-        setState("fail");
-      }
+      set("map_point", body.point ?? null);
+      set("map_query", body.query ?? "");
+      setState(body.point || body.query ? "ok" : "fail");
     } catch {
       setState("fail");
     }
@@ -62,12 +58,12 @@ function LocationCard({ s, set }: { s: Settings; set: Setter }) {
             {state === "busy" ? <Loader2 size={16} className="animate-spin" /> : <MapPin size={16} />} تحديد
           </button>
         </div>
-        {state === "ok" && s.map_point && (
+        {state === "ok" && (s.map_point || s.map_query) && (
           <p className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
-            <Check size={14} /> تم تحديد المكان ({s.map_point.lat.toFixed(5)}, {s.map_point.lng.toFixed(5)})
+            <Check size={14} /> تم تحديد المكان: {s.map_point ? `${s.map_point.lat.toFixed(5)}, ${s.map_point.lng.toFixed(5)}` : s.map_query}
           </p>
         )}
-        {state === "fail" && <p className="text-xs text-rose-600">معرفناش نقرأ الإحداثيات من اللينك ده، هنستخدم اسم المكان والعنوان في الخريطة بدلاً منه.</p>}
+        {state === "fail" && <p className="text-xs text-rose-600">معرفناش نقرأ المكان من اللينك ده، هنستخدم اسم المكان والعنوان في الخريطة بدلاً منه.</p>}
         <div className="overflow-hidden rounded-2xl ring-1 ring-ink/10">
           <iframe title="map" src={embedUrl(s, "ar")} className="h-56 w-full border-0" loading="lazy" />
         </div>
