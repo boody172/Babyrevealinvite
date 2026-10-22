@@ -11,7 +11,13 @@ function linkInPage(html: string) {
 
 // Follows a Google Maps share link (e.g. maps.app.goo.gl/...) to find the pin's coordinates.
 export async function GET(req: Request) {
-  let url = new URL(req.url).searchParams.get("url")?.trim() ?? "";
+  const params = new URL(req.url).searchParams;
+  let url = params.get("url")?.trim() ?? "";
+  if (params.get("debug") === "1" && isGoogleMapsUrl(url)) {
+    const r = await fetch(url, { redirect: "manual", headers: { "User-Agent": UA } });
+    const t = await r.text();
+    return NextResponse.json({ status: r.status, location: r.headers.get("location"), links: t.match(/https?:[^"'\s<>]{10,300}/g)?.slice(0, 40), len: t.length });
+  }
   if (!isGoogleMapsUrl(url)) return NextResponse.json({ error: "not_google_maps" }, { status: 400 });
 
   const seen = new Set<string>();
