@@ -3,17 +3,17 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RotateCw, Smartphone, X } from "lucide-react";
-import type { Settings } from "@/lib/types";
+import type { Lang, Settings } from "@/lib/types";
 import { PREVIEW_MESSAGE } from "@/components/invite/Invitation";
 
 /** The real invitation page in an iframe, fed the dashboard's unsaved settings. */
-function Frame({ slug, settings, className = "" }: { slug: string; settings: Settings; className?: string }) {
+function Frame({ slug, settings, lang, className = "" }: { slug: string; settings: Settings; lang: Lang; className?: string }) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [key, setKey] = useState(0);
 
   const push = useCallback(() => {
-    ref.current?.contentWindow?.postMessage({ type: PREVIEW_MESSAGE, settings }, window.location.origin);
-  }, [settings]);
+    ref.current?.contentWindow?.postMessage({ type: PREVIEW_MESSAGE, settings, lang }, window.location.origin);
+  }, [settings, lang]);
 
   useEffect(push, [push]);
   useEffect(() => {
@@ -38,13 +38,13 @@ function Frame({ slug, settings, className = "" }: { slug: string; settings: Set
 }
 
 /** Desktop: sticky phone beside the editor. Mobile: floating button that opens a full-screen preview. */
-export default function Preview({ slug, settings }: { slug: string; settings: Settings }) {
+export default function Preview({ slug, settings, lang }: { slug: string; settings: Settings; lang: Lang }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <div className="sticky top-20 hidden h-fit shrink-0 xl:block">
         <p className="mb-2 text-center text-xs font-semibold text-ink-soft">معاينة مباشرة (قبل الحفظ)</p>
-        <Frame slug={slug} settings={settings} className="h-[720px] w-[360px]" />
+        <Frame slug={slug} settings={settings} lang={lang} className="h-[720px] w-[360px]" />
       </div>
 
       <button
@@ -64,7 +64,7 @@ export default function Preview({ slug, settings }: { slug: string; settings: Se
               </button>
             </div>
             <motion.div initial={{ y: 40 }} animate={{ y: 0 }} className="mx-auto h-full w-full max-w-[420px] flex-1">
-              <Frame slug={slug} settings={settings} className="h-full w-full" />
+              <Frame slug={slug} settings={settings} lang={lang} className="h-full w-full" />
             </motion.div>
           </motion.div>
         )}

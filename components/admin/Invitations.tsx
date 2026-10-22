@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { Archive, ArchiveRestore, Check, Copy, ExternalLink, Home, Loader2, Pencil, Plus, Settings2, X } from "lucide-react";
+import { Archive, ArchiveRestore, Check, Copy, ExternalLink, Globe, Home, Loader2, Pencil, Plus, Settings2, X } from "lucide-react";
 import { admin, mediaUrl } from "@/lib/api";
 import { DEFAULT_CONTENT } from "@/lib/defaults";
 import type { InvitationSummary, Lang } from "@/lib/types";
@@ -13,6 +13,22 @@ const SLUG = /^[a-z0-9][a-z0-9-]{1,39}$/;
 export function inviteUrl(slug: string) {
   return `${typeof window !== "undefined" ? window.location.origin : ""}/${slug}`;
 }
+
+/** The link to share: the invitation's own Vercel link when it has one. */
+export function shareUrl(inv: { slug: string; domain?: string | null }) {
+  return inv.domain ? `https://${inv.domain}` : inviteUrl(inv.slug);
+}
+
+/** Ask the server to give an invitation its own *.vercel.app link. */
+export async function requestDomain(token: string, id: string, slug: string): Promise<{ domain?: string; error?: string }> {
+  const res = await fetch("/api/admin/domain", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, id, slug }) });
+  return res.json().catch(() => ({ error: "network" }));
+}
+
+export const DOMAIN_ERRORS: Record<string, string> = {
+  not_configured: "لازم تضيف VERCEL_TOKEN مرة واحدة في إعدادات المشروع على Vercel عشان الروابط الخاصة تتعمل تلقائياً",
+  domain_taken: "الاسم ده مستخدم على Vercel، غيّر لينك الدعوة وجرب تاني",
+};
 
 function slugError(slug: string, taken: string[]) {
   if (!SLUG.test(slug)) return "اللينك بالإنجليزي الصغير والأرقام والشرطة فقط (٢ حرف على الأقل)";
@@ -68,8 +84,9 @@ function InviteForm({
       } else {
         const blank = source.startsWith("blank-") ? DEFAULT_CONTENT[source.slice(6) as Lang] : null;
         const id = await admin.create(token, name, slug, blank, blank ? null : source);
+        const link = await requestDomain(token, id, slug);
         onDone(id);
-        toast("تم إنشاء الدعوة 🎉 عدّل التصميم والتفاصيل براحتك");
+        toast(link.domain ? `تم إنشاء الدعوة ولينكها الخاص 🎉 ${link.domain}` : "تم إنشاء الدعوة 🎉 عدّل التصميم والتفاصيل براحتك");
       }
     } catch (e) {
       toast(e instanceof Error && e.message === "slug_taken" ? "اللينك مستخدم" : errText(e), false);
@@ -134,6 +151,17 @@ export default function Invitations({
 }) {
   const [form, setForm] = useState<{ editing: InvitationSummary | null } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [linking, setLinking] = useState<string | null>(null);
+
+  async function makeLink(inv: InvitationSummary) {
+    setLinking(inv.id);
+    const r = await requestDomain(token, inv.id, inv.slug);
+    setLinking(null);
+    if (r.domain) {
+      await reload();
+      toast(`اللينك الخاص جاهز: ${r.domain}`);
+    } else toast(DOMAIN_ERRORS[r.error ?? ""] ?? "معرفناش نعمل اللينك، حاول تاني", false);
+  }
 
   async function act(fn: () => Promise<unknown>, ok: string) {
     try {
@@ -177,7 +205,16 @@ export default function Invitations({
               </button>
               <div className="p-4">
                 <p className="font-bold">{inv.name}</p>
-                <p className="mt-0.5 truncate text-xs text-ink-soft" dir="ltr">
+                {inv.domain ? (
+                  <a href={`https://${inv.domain}`} target="_blank" className="mt-1 flex items-center gap-1 truncate text-xs font-semibold text-blue-deep" dir="ltr">
+                    <Globe size={12} className="shrink-0" /> {inv.domain}
+                  </a>
+                ) : (
+                  <button onClick={() => makeLink(inv)} className="mt-1 flex items-center gap-1 text-xs font-semibold text-blue-deep">
+                    {linking === inv.id ? <Loader2 size={12} className="animate-spin" /> : <Globe size={12} />} إنشاء لينك Vercel خاص
+                  </button>
+                )}
+                <p className="mt-0.5 truncate text-[11px] text-ink-soft" dir="ltr">
                   /{inv.slug}
                 </p>
                 <p className="mt-2 text-xs text-ink-soft">
@@ -190,14 +227,14 @@ export default function Invitations({
                   <IconBtn
                     title="نسخ اللينك"
                     onClick={async () => {
-                      await navigator.clipboard.writeText(inviteUrl(inv.slug));
+                      await navigator.clipboard.writeText(shareUrl(inv));
                       setCopied(inv.id);
                       setTimeout(() => setCopied(null), 1500);
                     }}
                   >
                     {copied === inv.id ? <Check size={14} /> : <Copy size={14} />}
                   </IconBtn>
-                  <a href={`/${inv.slug}`} target="_blank" className="rounded-xl bg-cream p-2.5" title="فتح الدعوة" aria-label="فتح الدعوة">
+                  <a href={shareUrl(inv)} target="_blank" className="rounded-xl bg-cream p-2.5" title="فتح الدعوة" aria-label="فتح الدعوة">
                     <ExternalLink size={14} />
                   </a>
                   <IconBtn title="الاسم واللينك" onClick={() => setForm({ editing: inv })}>

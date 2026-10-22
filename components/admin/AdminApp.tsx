@@ -4,11 +4,11 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, ExternalLink, Gift, LayoutDashboard, Layers, Loader2, LogOut, Palette, PenLine, ShieldCheck, Users } from "lucide-react";
 import { admin, ApiError } from "@/lib/api";
-import type { AdminData, InvitationSummary, Settings } from "@/lib/types";
+import type { AdminData, InvitationSummary, Lang, Settings } from "@/lib/types";
 import { Balloon } from "@/components/invite/Decor";
 import { SaveBar, Toast, errText } from "./ui";
 import Login from "./Login";
-import Invitations from "./Invitations";
+import Invitations, { shareUrl } from "./Invitations";
 import Overview from "./Overview";
 import Guests from "./Guests";
 import Content from "./Content";
@@ -58,6 +58,7 @@ export default function AdminApp() {
   const [draft, setDraft] = useState<Settings | null>(null); // unsaved edits from Content + Design
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<Tab>("overview");
+  const [editLang, setEditLang] = useState<Lang>("ar"); // language whose texts are being edited (also shown in the preview)
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const toast = useCallback((text: string, ok = true) => setMsg({ text, ok }), []);
   const selectedRef = useRef<string | null>(null);
@@ -187,7 +188,7 @@ export default function AdminApp() {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {current && (
-              <a href={`/${current.slug}`} target="_blank" className="flex items-center gap-1 rounded-full bg-white px-3 py-2 text-xs font-semibold shadow-sm">
+              <a href={shareUrl(current)} target="_blank" className="flex items-center gap-1 rounded-full bg-white px-3 py-2 text-xs font-semibold shadow-sm">
                 <ExternalLink size={14} /> <span className="hidden sm:inline">فتح الدعوة</span>
               </a>
             )}
@@ -227,9 +228,9 @@ export default function AdminApp() {
           ) : (
             <AnimatePresence mode="wait">
               <motion.div key={`${tab}-${data.invitation.id}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                {tab === "overview" && <Overview data={data} onTab={setTab} />}
+                {tab === "overview" && <Overview data={data} domain={current?.domain ?? null} onTab={setTab} />}
                 {tab === "guests" && <Guests data={data} token={token} reload={reload} toast={toast} />}
-                {tab === "content" && <Content s={settings} set={set} setS={setS} />}
+                {tab === "content" && <Content s={settings} set={set} setS={setS} editLang={editLang} setEditLang={setEditLang} />}
                 {tab === "design" && <Design s={settings} set={set} token={token} toast={toast} />}
                 {tab === "reveal" && <Reveal data={data} token={token} reload={reload} toast={toast} />}
                 {tab === "security" && <Security token={token} toast={toast} />}
@@ -238,7 +239,7 @@ export default function AdminApp() {
           )}
         </main>
 
-        {editing && <Preview slug={data.invitation.slug} settings={settings} />}
+        {editing && <Preview slug={data.invitation.slug} settings={settings} lang={settings.languages.includes(editLang) ? editLang : settings.language} />}
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/5 bg-white/95 backdrop-blur md:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>

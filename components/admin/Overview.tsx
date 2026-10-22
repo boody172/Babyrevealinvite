@@ -6,11 +6,11 @@ import { Check, Copy, MessageCircle } from "lucide-react";
 import type { AdminData } from "@/lib/types";
 import { Card } from "./ui";
 import type { Tab } from "./AdminApp";
-import { inviteUrl } from "./Invitations";
+import { shareUrl } from "./Invitations";
 
 /* ---------------- overview ---------------- */
 
-export default function Overview({ data, onTab }: { data: AdminData; onTab: (t: Tab) => void }) {
+export default function Overview({ data, domain, onTab }: { data: AdminData; domain: string | null; onTab: (t: Tab) => void }) {
   const live = data.rsvps.filter((r) => !r.deleted);
   const attending = live.filter((r) => r.attending);
   const headcount = attending.reduce((a, r) => a + r.guests, 0);
@@ -19,7 +19,7 @@ export default function Overview({ data, onTab }: { data: AdminData; onTab: (t: 
   const total = boys + girls;
   const boyPct = total ? Math.round((boys / total) * 100) : 50;
   const [copied, setCopied] = useState(false);
-  const url = inviteUrl(data.invitation.slug);
+  const url = shareUrl({ slug: data.invitation.slug, domain });
   const waText = encodeURIComponent(`${data.settings.title} 💗💙\nولد ولا بنت؟ افتح الدعوة وأكد حضورك وخمّن 👇\n${url}`);
 
   const stats = [

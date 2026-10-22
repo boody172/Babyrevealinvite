@@ -28,6 +28,11 @@ export async function getInvite(slug: string | null, device?: string | null, ini
   return data ? { ...data, settings: withDefaults(data.settings) } : null;
 }
 
+export async function getInviteByDomain(domain: string, device?: string | null, init?: RequestInit): Promise<SiteData | null> {
+  const data = await rpc<SiteData | null>("invite_get_by_domain", { p_domain: domain, p_device: device ?? null }, init);
+  return data ? { ...data, settings: withDefaults(data.settings) } : null;
+}
+
 export function submitRsvp(input: {
   slug: string;
   name: string;
@@ -65,6 +70,9 @@ export const admin = {
     rpc<void>("admin_invitation_update", { p_token: token, p_id: id, p_name: name, p_slug: slug, p_data: data }),
   archive: (token: string, id: string, archived: boolean) =>
     rpc<void>("admin_invitation_archive", { p_token: token, p_id: id, p_archived: archived }),
+  whoami: (token: string) => rpc<boolean>("admin_whoami", { p_token: token }),
+  setDomain: (token: string, id: string, domain: string | null) =>
+    rpc<void>("admin_invitation_set_domain", { p_token: token, p_id: id, p_domain: domain }),
   setHome: (token: string, id: string) => rpc<void>("admin_set_home", { p_token: token, p_id: id }),
   reveal: (token: string, id: string, gender: Gender | null, revealed: boolean) =>
     rpc<void>("admin_invitation_reveal", { p_token: token, p_id: id, p_gender: gender, p_revealed: revealed }),

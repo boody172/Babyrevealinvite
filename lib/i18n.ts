@@ -76,6 +76,9 @@ const en = {
   password: "Password",
   enter: "Enter",
   wrongPassword: "Wrong password",
+  navVideo: "Video",
+  playVideo: "Play video",
+  language: "Language",
 };
 
 const ar: typeof en = {
@@ -154,6 +157,9 @@ const ar: typeof en = {
   password: "كلمة السر",
   enter: "دخول",
   wrongPassword: "كلمة السر غلط",
+  navVideo: "الفيديو",
+  playVideo: "تشغيل الفيديو",
+  language: "اللغة",
 };
 
 export const dict = { en, ar };

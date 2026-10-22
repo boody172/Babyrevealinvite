@@ -12,6 +12,7 @@ import { Balloon } from "./Decor";
 const NAV: Record<SectionId, keyof Dict> = {
   countdown: "navCountdown",
   details: "navDetails",
+  video: "navVideo",
   map: "navMap",
   vote: "navVote",
   rsvp: "navRsvp",

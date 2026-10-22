@@ -3,18 +3,22 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Share2 } from "lucide-react";
-import type { Gender, SectionId, Settings, SiteData } from "@/lib/types";
+import type { Gender, Lang, SectionId, Settings, SiteData } from "@/lib/types";
 import { t, type Dict } from "@/lib/i18n";
 import { getInvite, imageUrl } from "@/lib/api";
 import { withDefaults } from "@/lib/defaults";
 import { themeVars } from "@/lib/theme";
+import { LANG_NAMES, localize } from "@/lib/content";
+import VideoSection, { parseVideo } from "./VideoSection";
 import Intro from "./Intro";
 import { Countdown, Details, Footer, HeroCard, MapSection, VoteMeter, Wishes, InView } from "./Sections";
 import Rsvp, { burstConfetti } from "./Rsvp";
 import { FloatingField, Balloon } from "./Decor";
 import Menu, { sectionAnchor } from "./Menu";
+import { Globe } from "lucide-react";
 
 const DEVICE_KEY = "baby-reveal-device";
+const LANG_KEY = "baby-reveal-lang";
 export const PREVIEW_MESSAGE = "baby-reveal:preview";
 
 function getDevice(): string | null {
@@ -72,6 +76,7 @@ export default function Invitation({ slug, initial, preview = false }: { slug: s
   const [device, setDevice] = useState<string | null>(null);
   const [guess, setGuess] = useState<Gender | null>(null);
   const [failed, setFailed] = useState(false);
+  const [chosenLang, setChosenLang] = useState<Lang | null>(null); // guest's pick from the language switch
   const rsvpRef = useRef<HTMLElement>(null);
   const draft = useRef<Settings | null>(null);
 
@@ -88,6 +93,16 @@ export default function Invitation({ slug, initial, preview = false }: { slug: s
   }, [slug]);
 
   useEffect(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get("lang");
+    let saved: string | null = null;
+    try {
+      saved = localStorage.getItem(LANG_KEY);
+    } catch {}
+    const pick = fromUrl ?? saved;
+    if (pick === "ar" || pick === "en") setChosenLang(pick);
+  }, []);
+
+  useEffect(() => {
     const dev = preview ? null : getDevice();
     setDevice(dev);
     load(dev);
@@ -101,6 +116,7 @@ export default function Invitation({ slug, initial, preview = false }: { slug: s
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== window.location.origin || e.data?.type !== PREVIEW_MESSAGE) return;
       draft.current = withDefaults(e.data.settings);
+      if (e.data.lang === "ar" || e.data.lang === "en") setChosenLang(e.data.lang);
       setData((prev) => (prev ? { ...prev, settings: draft.current! } : prev));
     };
     window.addEventListener("message", onMessage);
@@ -108,9 +124,20 @@ export default function Invitation({ slug, initial, preview = false }: { slug: s
     return () => window.removeEventListener("message", onMessage);
   }, [preview]);
 
-  const s = data?.settings;
-  const lang = s?.language ?? "en";
+  const base = data?.settings;
+  const lang: Lang = base ? (chosenLang && base.languages.includes(chosenLang) ? chosenLang : base.language) : "en";
+  const s = base ? localize(base, lang) : undefined;
+  const view = data && s ? { ...data, settings: s } : null; // what the guest sees, in their language
   const d = t(lang, s?.labels?.[lang]);
+
+  function switchLanguage() {
+    if (!base) return;
+    const next = base.languages[(base.languages.indexOf(lang) + 1) % base.languages.length];
+    setChosenLang(next);
+    try {
+      localStorage.setItem(LANG_KEY, next);
+    } catch {}
+  }
   const skipIntro = preview || s?.theme.intro === false;
 
   useEffect(() => {
@@ -141,7 +168,7 @@ export default function Invitation({ slug, initial, preview = false }: { slug: s
     } catch {}
   }
 
-  if (!data || !s) {
+  if (!data || !s || !view || !base) {
     return (
       <main className="watercolor-bg flex min-h-[100svh] flex-col items-center justify-center gap-4 px-6 text-center">
         <motion.div animate={{ y: [0, -14, 0] }} transition={{ duration: 2, repeat: Infinity }} className="flex gap-2">
@@ -164,12 +191,13 @@ export default function Invitation({ slug, initial, preview = false }: { slug: s
     countdown: () => !revealed && <Countdown s={s} d={d} />,
     details: () => <Details s={s} d={d} mapButton={!s.sections.some((x) => x.id === "map" && x.visible)} />,
     map: () => <MapSection s={s} d={d} />,
-    vote: () => <VoteMeter data={data} d={d} onPick={revealed ? () => {} : pick} />,
+    video: () => <VideoSection s={s} d={d} />,
+    vote: () => <VoteMeter data={view} d={d} onPick={revealed ? () => {} : pick} />,
     rsvp: () =>
       !revealed && (
         <Rsvp
           ref={rsvpRef}
-          data={data}
+          data={view}
           d={d}
           device={device}
           slug={slug}
@@ -189,7 +217,8 @@ export default function Invitation({ slug, initial, preview = false }: { slug: s
   const shown = s.sections
     .filter((x) => x.visible)
     .map((x) => x.id)
-    .filter((id) => !(revealed && (id === "countdown" || id === "rsvp")) && !(id === "wishes" && !data.wishes?.length));
+    .filter((id) => !(revealed && (id === "countdown" || id === "rsvp")))
+    .filter((id) => !(id === "wishes" && !data.wishes?.length) && !(id === "video" && !parseVideo(s.video.url)));
 
   return (
     <main className="watercolor-bg paper-noise relative min-h-screen" dir={lang === "ar" ? "rtl" : "ltr"} style={themeVars(s.theme)}>
@@ -200,12 +229,27 @@ export default function Invitation({ slug, initial, preview = false }: { slug: s
       </AnimatePresence>
 
       <FloatingField level={s.theme.decor} />
+      {base.languages.length > 1 && (
+        <motion.button
+          type="button"
+          onClick={switchLanguage}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileTap={{ scale: 0.92 }}
+          aria-label={d.language}
+          className="glass fixed top-4 z-[55] flex h-12 items-center gap-1.5 rounded-full px-4 font-sans text-sm font-semibold text-ink"
+          style={{ insetInlineEnd: 16 }}
+        >
+          <Globe size={16} />
+          {LANG_NAMES[base.languages[(base.languages.indexOf(lang) + 1) % base.languages.length]]}
+        </motion.button>
+      )}
       {showContent && <Menu s={s} d={d} sections={shown} />}
 
       {showContent && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }} className="relative">
           <div id={sectionAnchor("top")}>
-            {revealed && <RevealHero data={data} gender={revealed} d={d} />}
+            {revealed && <RevealHero data={view} gender={revealed} d={d} />}
             <HeroCard s={s} d={d} />
           </div>
           {shown.map((id) => (

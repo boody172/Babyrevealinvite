@@ -2,7 +2,8 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Eye, EyeOff, ImageUp, Images, Loader2, RotateCcw, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Eye, EyeOff, Film, ImageUp, Images, Loader2, RotateCcw, Trash2, X } from "lucide-react";
+import { parseVideo } from "@/components/invite/VideoSection";
 import type { CardLayout, ImageKey, MediaItem, Settings, Theme } from "@/lib/types";
 import { DEFAULT_THEME, FONTS, PRESETS } from "@/lib/theme";
 import { SECTION_LABELS } from "@/lib/defaults";
@@ -146,6 +147,117 @@ function Slider({ label, value, min, max, onChange }: { label: string; value: nu
   );
 }
 
+function FilePicker({ inputRef, accept, onFile }: { inputRef: React.RefObject<HTMLInputElement | null>; accept: string; onFile: (f: File) => void }) {
+  return (
+    <input
+      ref={inputRef}
+      type="file"
+      accept={accept}
+      hidden
+      onChange={(e) => {
+        const f = e.target.files?.[0];
+        if (f) onFile(f);
+        e.target.value = "";
+      }}
+    />
+  );
+}
+
+function VideoCard({ s, set, token, toast }: { s: Settings; set: Setter; token: string; toast: ToastFn }) {
+  const fileInput = useRef<HTMLInputElement>(null);
+  const posterInput = useRef<HTMLInputElement>(null);
+  const [progress, setProgress] = useState<number | null>(null);
+  const [link, setLink] = useState("");
+  const v = s.video;
+  const embed = parseVideo(v.url);
+  const setVideo = (patch: Partial<Settings["video"]>) => set("video", { ...v, ...patch });
+
+  async function uploadVideo(file: File) {
+    setProgress(0);
+    try {
+      const { upload } = await import("@vercel/blob/client"); // only loaded when needed
+      const blob = await upload(`videos/${file.name.replace(/[^\w.-]+/g, "-")}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/admin/upload",
+        clientPayload: token,
+        multipart: file.size > 20 * 1024 * 1024,
+        onUploadProgress: ({ percentage }) => setProgress(Math.round(percentage)),
+      });
+      setVideo({ url: blob.url });
+      toast("تم رفع الفيديو ✓");
+    } catch {
+      toast("معرفناش نرفع الفيديو. اتأكد إنه MP4 أو MOV وأقل من 300 ميجا", false);
+    } finally {
+      setProgress(null);
+    }
+  }
+
+  async function uploadPoster(file: File) {
+    try {
+      const { mime, base64 } = await compressImage(file, 1280);
+      setVideo({ poster: await admin.uploadMedia(token, `غلاف فيديو · ${file.name}`.slice(0, 80), mime, base64) });
+    } catch (e) {
+      toast(errText(e), false);
+    }
+  }
+
+  return (
+    <Card title="الفيديو" hint="ارفع فيديو من جهازك (MP4 أو MOV حتى 300 ميجا) أو حط لينك يوتيوب. بيتحمّل بس لما الضيف يوصله عشان الموقع يفضل سريع">
+      <div className="space-y-3">
+        {embed && (
+          <div className="overflow-hidden rounded-2xl bg-ink">
+            {embed.kind === "file" ? (
+              // eslint-disable-next-line jsx-a11y/media-has-caption
+              <video src={v.url} poster={v.poster ? mediaUrl(v.poster) : undefined} controls playsInline preload="metadata" className="aspect-video w-full" />
+            ) : (
+              <p className="p-4 text-center text-sm text-white" dir="ltr">
+                {embed.kind === "youtube" ? "YouTube" : "Vimeo"} · {embed.id}
+              </p>
+            )}
+          </div>
+        )}
+        {progress !== null && (
+          <div className="overflow-hidden rounded-full bg-cream">
+            <div className="h-2 rounded-full bg-ink transition-all" style={{ width: `${progress}%` }} />
+            <p className="py-1 text-center text-xs text-ink-soft">جاري الرفع… {progress}%</p>
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          <button disabled={progress !== null} onClick={() => fileInput.current?.click()} className="flex items-center justify-center gap-1 rounded-xl bg-ink py-2.5 text-xs font-semibold text-white disabled:opacity-50">
+            <Film size={14} /> {embed ? "تغيير الفيديو" : "رفع فيديو"}
+          </button>
+          <button onClick={() => posterInput.current?.click()} className="flex items-center justify-center gap-1 rounded-xl bg-white py-2.5 text-xs font-semibold ring-1 ring-ink/10">
+            <ImageUp size={14} /> {v.poster ? "تغيير الغلاف" : "صورة غلاف (اختياري)"}
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <input className="input" dir="ltr" placeholder="https://youtube.com/watch?v=..." value={link} onChange={(e) => setLink(e.target.value)} />
+          <button
+            onClick={() => {
+              if (!parseVideo(link)) return toast("اللينك ده مش فيديو", false);
+              setVideo({ url: link.trim() });
+              setLink("");
+            }}
+            className="shrink-0 rounded-2xl bg-cream px-4 text-sm font-semibold"
+          >
+            إضافة
+          </button>
+        </div>
+        {embed && (
+          <>
+            <Toggle label="تشغيل تلقائي بدون صوت لما الضيف يوصل للفيديو" hint="للفيديوهات المرفوعة بس" checked={v.autoplay} onChange={(x) => setVideo({ autoplay: x })} />
+            <button onClick={() => setVideo({ url: "", poster: "" })} className="flex w-full items-center justify-center gap-1 py-1 text-xs font-semibold text-rose-600">
+              <Trash2 size={13} /> إزالة الفيديو
+            </button>
+          </>
+        )}
+        <FilePicker inputRef={fileInput} accept="video/mp4,video/webm,video/quicktime" onFile={uploadVideo} />
+        <FilePicker inputRef={posterInput} accept="image/*" onFile={uploadPoster} />
+      </div>
+    </Card>
+  );
+}
+
 export default function Design({ s, set, token, toast }: { s: Settings; set: Setter; token: string; toast: ToastFn }) {
   const th = s.theme;
   const setTheme = (patch: Partial<Theme>) => set("theme", { ...th, ...patch });
@@ -278,6 +390,8 @@ export default function Design({ s, set, token, toast }: { s: Settings; set: Set
           ))}
         </div>
       </Card>
+
+      <VideoCard s={s} set={set} token={token} toast={toast} />
 
       <Card title="مكان الكلام على كارت الدعوة" hint="لما تغيّر الخلفية، حرّك الكلام لحد ما يقعد في المساحة الفاضية (شوف المعاينة)">
         <div className="space-y-4">

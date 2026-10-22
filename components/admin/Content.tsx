@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Check, ChevronDown, Loader2, MapPin, Plus, Search, Trash2 } from "lucide-react";
-import type { Lang, Settings } from "@/lib/types";
-import { DEFAULT_CONTENT } from "@/lib/defaults";
+import type { ExtraBlock, Lang, Settings, TextKey } from "@/lib/types";
+import { LANG_NAMES, localize, setDefaultLanguage } from "@/lib/content";
 import { dict } from "@/lib/i18n";
 import { embedUrl } from "@/lib/maps";
 import { Card, Field, TextField, Toggle } from "./ui";
@@ -72,10 +72,9 @@ function LocationCard({ s, set }: { s: Settings; set: Setter }) {
   );
 }
 
-function LabelsCard({ s, set }: { s: Settings; set: Setter }) {
+function LabelsCard({ s, set, lang }: { s: Settings; set: Setter; lang: Lang }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
-  const lang = s.language;
   const base = dict[lang] as Record<string, string>;
   const overrides = s.labels[lang] ?? {};
   const keys = useMemo(
@@ -115,117 +114,164 @@ function LabelsCard({ s, set }: { s: Settings; set: Setter }) {
   );
 }
 
-export default function Content({ s, set, setS }: { s: Settings; set: Setter; setS: (fn: (p: Settings) => Settings) => void }) {
+export default function Content({
+  s,
+  set,
+  setS,
+  editLang,
+  setEditLang,
+}: {
+  s: Settings;
+  set: Setter;
+  setS: (fn: (p: Settings) => Settings) => void;
+  editLang: Lang;
+  setEditLang: (l: Lang) => void;
+}) {
   const dt = splitIso(s.event_date);
   const setDt = (p: Partial<typeof dt>) => {
     const n = { ...dt, ...p };
     set("event_date", `${n.date}T${n.time}:00${n.offset}`);
   };
 
-  function switchLanguage(lang: Lang) {
-    if (lang === s.language) return;
-    const fill = confirm(
-      lang === "ar"
-        ? "تحويل الدعوة للعربي. تحب نترجم النصوص الأساسية لنصوص عربية جاهزة؟ (تقدر تعدلها بعد كده)"
-        : "Switch to English. Replace the main texts with ready English versions? (you can edit them after)",
-    );
-    const def = DEFAULT_CONTENT[lang];
-    setS((p) => ({
-      ...p,
-      language: lang,
-      ...(fill && {
-        intro_line: def.intro_line,
-        title: def.title,
-        tagline: def.tagline,
-        venue: def.venue,
-        address: def.address,
-        directions: def.directions,
-        dress_code: def.dress_code,
-        prize: def.prize,
-        closing_note: def.closing_note,
-        baby_name: def.baby_name,
-        parents: def.parents,
-      }),
-    }));
+  // Texts are read/written in the language being edited: the default language lives at the
+  // top level, every other language in `translations`.
+  const lang = s.languages.includes(editLang) ? editLang : s.language;
+  const isDefault = lang === s.language;
+  const shown = localize(s, lang); // what guests see in this language (incl. fallbacks)
+  const tr = s.translations[lang] ?? {};
+  const val = (k: TextKey) => (isDefault ? s[k] : (tr[k] ?? ""));
+  const put = (k: TextKey, v: string) => (isDefault ? set(k, v) : set("translations", { ...s.translations, [lang]: { ...tr, [k]: v } }));
+  const extras = isDefault ? s.extras : (tr.extras ?? []);
+  const putExtras = (next: ExtraBlock[]) => (isDefault ? set("extras", next) : set("translations", { ...s.translations, [lang]: { ...tr, extras: next } }));
+  const text = (k: TextKey, label: string, opts: { multiline?: boolean; hint?: string } = {}) => (
+    <TextField label={label} value={val(k)} onChange={(v) => put(k, v)} multiline={opts.multiline} hint={opts.hint} placeholder={isDefault ? undefined : shown[k]} dir={lang === "ar" ? "rtl" : "ltr"} />
+  );
+
+  function toggleLanguage(l: Lang) {
+    if (l === s.language) return;
+    const on = s.languages.includes(l);
+    set("languages", on ? s.languages.filter((x) => x !== l) : [...s.languages, l]);
+    if (!on) setEditLang(l);
   }
 
   return (
     <div className="space-y-5">
-      <Card title="لغة الدعوة">
-        <div className="grid grid-cols-2 gap-2 rounded-2xl bg-cream p-1">
+      <Card title="لغات الدعوة" hint="فعّل أكتر من لغة، وهيظهر للمعازيم زرار تحويل اللغة فوق الدعوة">
+        <div className="space-y-3">
           {(["ar", "en"] as const).map((l) => (
-            <button key={l} onClick={() => switchLanguage(l)} className={`rounded-xl py-2.5 text-sm font-semibold ${s.language === l ? "bg-white shadow" : "text-ink-soft"}`}>
-              {l === "ar" ? "العربية" : "English"}
-            </button>
+            <div key={l} className="flex items-center gap-2 rounded-2xl bg-cream p-2 ps-4">
+              <span className="flex-1 text-sm font-semibold">{LANG_NAMES[l]}</span>
+              {s.language === l ? (
+                <span className="rounded-full bg-ink px-3 py-1.5 text-[11px] font-bold text-white">اللغة الأساسية</span>
+              ) : (
+                <>
+                  {s.languages.includes(l) && (
+                    <button onClick={() => setS((p) => setDefaultLanguage(p, l))} className="rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold ring-1 ring-ink/10">
+                      خليها الأساسية
+                    </button>
+                  )}
+                  <button
+                    onClick={() => toggleLanguage(l)}
+                    className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${s.languages.includes(l) ? "bg-emerald-500 text-white" : "bg-white ring-1 ring-ink/10"}`}
+                  >
+                    {s.languages.includes(l) ? "مفعّلة ✓" : "تفعيل"}
+                  </button>
+                </>
+              )}
+            </div>
           ))}
         </div>
       </Card>
 
-      <Card title="نص الدعوة" className="space-y-4">
+      {s.languages.length > 1 && (
+        <div className="sticky top-16 z-20 rounded-2xl bg-cream/90 py-2 backdrop-blur">
+          <p className="mb-1.5 text-xs font-semibold text-ink-soft">بتعدّل نصوص:</p>
+          <div className="grid grid-cols-2 gap-2 rounded-2xl bg-white p-1 shadow-sm">
+            {s.languages.map((l) => (
+              <button key={l} onClick={() => setEditLang(l)} className={`rounded-xl py-2.5 text-sm font-semibold transition ${lang === l ? "bg-ink text-white" : "text-ink-soft"}`}>
+                {LANG_NAMES[l]}
+              </button>
+            ))}
+          </div>
+          {!isDefault && <p className="mt-1.5 text-[11px] text-ink-soft">أي خانة تسيبها فاضية هتاخد النص الرمادي اللي فيها.</p>}
+        </div>
+      )}
+
+      <Card title="نص الدعوة">
         <div className="space-y-4">
-          <TextField label="السطر الأول" value={s.intro_line} onChange={(v) => set("intro_line", v)} />
-          <TextField label="العنوان الرئيسي" value={s.title} onChange={(v) => set("title", v)} />
-          <TextField label="اسم البيبي / العائلة" value={s.baby_name} onChange={(v) => set("baby_name", v)} hint="بيظهر بخط مزخرف في نص الكارت" />
-          <TextField label="الجملة التعريفية" multiline value={s.tagline} onChange={(v) => set("tagline", v)} />
-          <TextField label="من (أسماء الأب والأم)" value={s.parents} onChange={(v) => set("parents", v)} />
-          <TextField label="جملة الختام" value={s.closing_note} onChange={(v) => set("closing_note", v)} />
+          {text("intro_line", "السطر الأول")}
+          {text("title", "العنوان الرئيسي")}
+          {text("baby_name", "اسم البيبي / العائلة", { hint: "بيظهر بخط مزخرف في نص الكارت" })}
+          {text("tagline", "الجملة التعريفية", { multiline: true })}
+          {text("parents", "من (أسماء الأب والأم)")}
+          {text("closing_note", "جملة الختام")}
         </div>
       </Card>
 
       <Card title="تفاصيل الحفلة">
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <TextField label="التاريخ" type="date" value={dt.date} onChange={(v) => setDt({ date: v })} dir="ltr" />
-            <TextField label="الساعة" type="time" value={dt.time} onChange={(v) => setDt({ time: v })} dir="ltr" />
-          </div>
-          <Field label="المنطقة الزمنية">
-            <select className="input" value={dt.offset} onChange={(e) => setDt({ offset: e.target.value })}>
-              {TIMEZONES.map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <TextField label="اسم المكان" value={s.venue} onChange={(v) => set("venue", v)} />
-          <TextField label="العنوان" value={s.address} onChange={(v) => set("address", v)} />
-          <TextField label="طريقة الوصول / الدخول" value={s.directions} onChange={(v) => set("directions", v)} hint="مثال: الدخول من بوابة ٥" />
-          <TextField label="الدريس كود" value={s.dress_code} onChange={(v) => set("dress_code", v)} hint="سيبه فاضي لو مش عايزه يظهر" />
-          <TextField label="جائزة التخمين الصح" value={s.prize} onChange={(v) => set("prize", v)} hint="بتظهر جنب التصويت وبعد ما الضيف يبعت تخمينه" />
-          <TextField label="آخر ميعاد لتأكيد الحضور (اختياري)" type="date" value={s.rsvp_deadline} onChange={(v) => set("rsvp_deadline", v)} dir="ltr" />
+          {isDefault && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <TextField label="التاريخ" type="date" value={dt.date} onChange={(v) => setDt({ date: v })} dir="ltr" />
+                <TextField label="الساعة" type="time" value={dt.time} onChange={(v) => setDt({ time: v })} dir="ltr" />
+              </div>
+              <Field label="المنطقة الزمنية">
+                <select className="input" value={dt.offset} onChange={(e) => setDt({ offset: e.target.value })}>
+                  {TIMEZONES.map(([v, l]) => (
+                    <option key={v} value={v}>
+                      {l}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </>
+          )}
+          {text("venue", "اسم المكان")}
+          {text("address", "العنوان")}
+          {text("directions", "طريقة الوصول / الدخول", { hint: "مثال: الدخول من بوابة ٥" })}
+          {text("dress_code", "الدريس كود", { hint: "سيبه فاضي لو مش عايزه يظهر" })}
+          {text("prize", "جائزة التخمين الصح", { hint: "بتظهر جنب التصويت وبعد ما الضيف يبعت تخمينه" })}
+          {text("video_title", "عنوان قسم الفيديو")}
+          {isDefault && <TextField label="آخر ميعاد لتأكيد الحضور (اختياري)" type="date" value={s.rsvp_deadline} onChange={(v) => set("rsvp_deadline", v)} dir="ltr" />}
         </div>
       </Card>
 
-      <LocationCard s={s} set={set} />
+      {isDefault && <LocationCard s={s} set={set} />}
 
-      <Card title="كروت معلومات إضافية" hint="باركينج، رقم للتواصل، هدايا… أي معلومة عايز تضيفها">
+      <Card title="كروت معلومات إضافية" hint={isDefault ? "باركينج، رقم للتواصل، هدايا… أي معلومة عايز تضيفها" : "لو سبتها فاضية هتظهر نفس كروت اللغة الأساسية"}>
         <div className="space-y-3">
-          {s.extras.map((x, i) => (
+          {extras.map((x, i) => (
             <div key={i} className="space-y-2 rounded-2xl bg-cream p-3">
               <div className="flex gap-2">
-                <input className="input" placeholder="العنوان" value={x.title} onChange={(e) => set("extras", s.extras.map((y, j) => (j === i ? { ...y, title: e.target.value } : y)))} />
-                <button onClick={() => set("extras", s.extras.filter((_, j) => j !== i))} className="rounded-xl bg-rose-50 px-3 text-rose-600" aria-label="حذف">
+                <input className="input" placeholder="العنوان" value={x.title} onChange={(e) => putExtras(extras.map((y, j) => (j === i ? { ...y, title: e.target.value } : y)))} />
+                <button onClick={() => putExtras(extras.filter((_, j) => j !== i))} className="rounded-xl bg-rose-50 px-3 text-rose-600" aria-label="حذف">
                   <Trash2 size={16} />
                 </button>
               </div>
-              <textarea className="input" placeholder="النص" value={x.text} onChange={(e) => set("extras", s.extras.map((y, j) => (j === i ? { ...y, text: e.target.value } : y)))} />
+              <textarea className="input" placeholder="النص" value={x.text} onChange={(e) => putExtras(extras.map((y, j) => (j === i ? { ...y, text: e.target.value } : y)))} />
             </div>
           ))}
-          <button onClick={() => set("extras", [...s.extras, { title: "", text: "" }])} className="flex w-full items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-ink/15 py-3 text-sm font-semibold text-ink-soft">
+          <button
+            onClick={() => putExtras([...(extras.length || isDefault ? extras : s.extras.map((x) => ({ ...x }))), { title: "", text: "" }])}
+            className="flex w-full items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-ink/15 py-3 text-sm font-semibold text-ink-soft"
+          >
             <Plus size={16} /> إضافة كارت
           </button>
         </div>
       </Card>
 
-      <Card title="إعدادات تأكيد الحضور">
-        <div className="space-y-2">
-          <Toggle label="استقبال تأكيدات الحضور" checked={s.rsvp_open} onChange={(v) => set("rsvp_open", v)} />
-          <Toggle label="إظهار نسب التصويت للمعازيم" hint="لو قفلتها النتايج هتفضل سر لحد الكشف" checked={s.show_results} onChange={(v) => set("show_results", v)} />
-          <Toggle label="طلب رقم الموبايل في الفورم" checked={s.ask_phone} onChange={(v) => set("ask_phone", v)} />
-        </div>
-      </Card>
+      {isDefault && (
+        <Card title="إعدادات تأكيد الحضور">
+          <div className="space-y-2">
+            <Toggle label="استقبال تأكيدات الحضور" checked={s.rsvp_open} onChange={(v) => set("rsvp_open", v)} />
+            <Toggle label="إظهار نسب التصويت للمعازيم" hint="لو قفلتها النتايج هتفضل سر لحد الكشف" checked={s.show_results} onChange={(v) => set("show_results", v)} />
+            <Toggle label="طلب رقم الموبايل في الفورم" checked={s.ask_phone} onChange={(v) => set("ask_phone", v)} />
+          </div>
+        </Card>
+      )}
 
-      <LabelsCard s={s} set={set} />
+      <LabelsCard s={s} set={set} lang={lang} />
     </div>
   );
 }

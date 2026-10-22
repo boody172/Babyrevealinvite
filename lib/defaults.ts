@@ -1,11 +1,12 @@
 import type { Lang, SectionId, Settings } from "./types";
 import { DEFAULT_THEME } from "./theme";
 
-export const SECTION_IDS: SectionId[] = ["countdown", "details", "map", "vote", "rsvp", "wishes"];
+export const SECTION_IDS: SectionId[] = ["countdown", "details", "video", "map", "vote", "rsvp", "wishes"];
 
 export const SECTION_LABELS: Record<SectionId, string> = {
   countdown: "العد التنازلي",
   details: "التفاصيل (التاريخ والمكان)",
+  video: "الفيديو",
   map: "الخريطة واللوكيشن",
   vote: "ولد ولا بنت + نسب التصويت",
   rsvp: "فورم تأكيد الحضور والتخمين",
@@ -26,12 +27,16 @@ const shared = {
   theme: DEFAULT_THEME,
   labels: {},
   images: {},
+  translations: {},
+  video: { url: "", poster: "", autoplay: false },
 };
 
 export const DEFAULT_CONTENT: Record<Lang, Settings> = {
   en: {
     ...shared,
     language: "en",
+    languages: ["en"],
+    video_title: "A little message for you",
     intro_line: "You're invited to a",
     title: "Gender Reveal",
     baby_name: "Baby",
@@ -47,6 +52,8 @@ export const DEFAULT_CONTENT: Record<Lang, Settings> = {
   ar: {
     ...shared,
     language: "ar",
+    languages: ["ar"],
+    video_title: "رسالة صغيرة ليكم",
     intro_line: "ندعوكم لحضور حفل",
     title: "معرفة نوع المولود",
     baby_name: "البيبي",
@@ -77,7 +84,17 @@ export function withDefaults(raw: Partial<Settings> | null | undefined): Setting
   merged.images = Object.fromEntries(Object.entries(raw?.images ?? {}).filter(([, v]) => typeof v === "string" && v)) as Settings["images"];
   if (!Array.isArray(merged.extras)) merged.extras = [];
   // keep saved order, drop unknown ids, append sections added in newer versions
-  const saved = Array.isArray(raw?.sections) ? raw.sections.filter((s) => SECTION_IDS.includes(s.id)) : [];
-  merged.sections = [...saved, ...SECTION_IDS.filter((id) => !saved.some((s) => s.id === id)).map((id) => ({ id, visible: true }))];
+  merged.languages = Array.isArray(raw?.languages) && raw.languages.length ? raw.languages : [lang];
+  if (!merged.languages.includes(lang)) merged.languages = [lang, ...merged.languages];
+  merged.translations = raw?.translations ?? {};
+  merged.video = { ...DEFAULT_CONTENT[lang].video, ...(raw?.video ?? {}) };
+  // keep the saved order; sections added in newer versions slot in after their default neighbour
+  const sections = Array.isArray(raw?.sections) ? raw.sections.filter((x) => SECTION_IDS.includes(x.id)) : [];
+  SECTION_IDS.forEach((id, i) => {
+    if (sections.some((x) => x.id === id)) return;
+    const after = sections.findIndex((x) => x.id === SECTION_IDS[i - 1]);
+    sections.splice(after + 1, 0, { id, visible: true });
+  });
+  merged.sections = sections;
   return merged;
 }

@@ -1,7 +1,7 @@
 export type Gender = "boy" | "girl";
 export type Lang = "en" | "ar";
 
-export type SectionId = "countdown" | "details" | "map" | "vote" | "rsvp" | "wishes";
+export type SectionId = "countdown" | "details" | "video" | "map" | "vote" | "rsvp" | "wishes";
 export type ImageKey = "frame" | "bear_boy" | "bear_girl" | "scene";
 
 export interface ExtraBlock {
@@ -37,8 +37,16 @@ export interface MapPoint {
   lng: number;
 }
 
+export interface VideoSettings {
+  url: string; // uploaded file (Vercel Blob) or a YouTube / Vimeo link
+  poster: string; // media library id, optional
+  autoplay: boolean; // muted autoplay when scrolled into view
+}
+
 export interface Settings {
-  language: Lang;
+  language: Lang; // default language; the top-level texts below are in this language
+  languages: Lang[]; // languages guests can switch between
+  translations: Partial<Record<Lang, Partial<TextFields>>>;
   intro_line: string;
   title: string;
   baby_name: string;
@@ -64,7 +72,27 @@ export interface Settings {
   theme: Theme;
   labels: Partial<Record<Lang, Record<string, string>>>;
   images: Partial<Record<ImageKey, string>>; // media library id; empty = bundled default
+  video: VideoSettings;
+  video_title: string;
 }
+
+/** Texts that are written per language. */
+export const TEXT_KEYS = [
+  "intro_line",
+  "title",
+  "baby_name",
+  "parents",
+  "tagline",
+  "venue",
+  "address",
+  "directions",
+  "dress_code",
+  "prize",
+  "closing_note",
+  "video_title",
+] as const;
+export type TextKey = (typeof TEXT_KEYS)[number];
+export type TextFields = Pick<Settings, TextKey> & { extras: ExtraBlock[] };
 
 export interface Wish {
   name: string;
@@ -104,6 +132,7 @@ export interface InvitationInfo {
 }
 
 export interface InvitationSummary extends InvitationInfo {
+  domain: string | null; // the invitation's own link, e.g. faisal-khadija-invitation.vercel.app
   created_at: string;
   language: Lang | null;
   baby_name: string | null;

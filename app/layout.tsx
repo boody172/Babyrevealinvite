@@ -20,6 +20,7 @@ import "@fontsource/amiri/400.css";
 import "@fontsource/amiri/700.css";
 import "@fontsource/reem-kufi/500.css";
 import "./globals.css";
+import { SUPABASE_URL } from "@/lib/api";
 
 export const viewport: Viewport = {
   themeColor: "#fbf6f0",
@@ -48,6 +49,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* the invitation talks to the database right after load; open the connection early */}
+        <link rel="preconnect" href={SUPABASE_URL} crossOrigin="" />
+      </head>
       <body>{children}</body>
     </html>
   );
