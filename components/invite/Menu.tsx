@@ -22,7 +22,7 @@ const NAV: Record<SectionId, keyof Dict> = {
 
 export const sectionAnchor = (id: SectionId | "top") => `sec-${id}`;
 
-/** Floating ☰ button: jump to any part of the invitation, or sign in to the dashboard. */
+/** Floating ☰ button: jump to any part of the invitation (and, if enabled, sign in to the dashboard). */
 export default function Menu({ s, d, sections }: { s: Settings; d: Dict; sections: SectionId[] }) {
   const [open, setOpen] = useState(false);
   const [login, setLogin] = useState(false);
@@ -117,31 +117,33 @@ export default function Menu({ s, d, sections }: { s: Settings; d: Dict; section
                 ))}
               </div>
 
-              <div className="mt-auto pt-6">
-                <div className="gold-line mb-4" />
-                {!login ? (
-                  <button onClick={() => setLogin(true)} className="flex w-full items-center gap-2 rounded-2xl px-4 py-3 font-sans text-sm font-semibold text-ink-soft hover:bg-white">
-                    <Lock size={16} /> {d.adminLogin}
-                  </button>
-                ) : (
-                  <form onSubmit={signIn} className="space-y-2 rounded-2xl bg-white p-3">
-                    <input
-                      type="password"
-                      autoFocus
-                      dir="ltr"
-                      value={pw}
-                      onChange={(e) => setPw(e.target.value)}
-                      placeholder={d.password}
-                      autoComplete="current-password"
-                      className="input text-center"
-                    />
-                    {err && <p className="text-center font-sans text-xs text-rose-600">{d.wrongPassword}</p>}
-                    <button disabled={busy || !pw} className="flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3 font-sans text-sm font-semibold text-cream disabled:opacity-50">
-                      {busy && <Loader2 size={16} className="animate-spin" />} {d.enter}
+              {s.show_admin_login && (
+                <div className="mt-auto pt-6">
+                  <div className="gold-line mb-4" />
+                  {!login ? (
+                    <button onClick={() => setLogin(true)} className="flex w-full items-center gap-2 rounded-2xl px-4 py-3 font-sans text-sm font-semibold text-ink-soft hover:bg-white">
+                      <Lock size={16} /> {d.adminLogin}
                     </button>
-                  </form>
-                )}
-              </div>
+                  ) : (
+                    <form onSubmit={signIn} className="space-y-2 rounded-2xl bg-white p-3">
+                      <input
+                        type="password"
+                        autoFocus
+                        dir="ltr"
+                        value={pw}
+                        onChange={(e) => setPw(e.target.value)}
+                        placeholder={d.password}
+                        autoComplete="current-password"
+                        className="input text-center"
+                      />
+                      {err && <p className="text-center font-sans text-xs text-rose-600">{d.wrongPassword}</p>}
+                      <button disabled={busy || !pw} className="flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3 font-sans text-sm font-semibold text-cream disabled:opacity-50">
+                        {busy && <Loader2 size={16} className="animate-spin" />} {d.enter}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              )}
             </motion.nav>
           </motion.div>
         )}

@@ -267,6 +267,12 @@ export default function Content({
             <Toggle label="استقبال تأكيدات الحضور" checked={s.rsvp_open} onChange={(v) => set("rsvp_open", v)} />
             <Toggle label="إظهار نسب التصويت للمعازيم" hint="لو قفلتها النتايج هتفضل سر لحد الكشف" checked={s.show_results} onChange={(v) => set("show_results", v)} />
             <Toggle label="طلب رقم الموبايل في الفورم" checked={s.ask_phone} onChange={(v) => set("ask_phone", v)} />
+            <Toggle
+              label="إظهار دخول الأدمن في قائمة الدعوة"
+              hint="مقفول = الضيوف مش هيشوفوا أي دخول للوحة التحكم. إنت تدخل من /admin"
+              checked={s.show_admin_login}
+              onChange={(v) => set("show_admin_login", v)}
+            />
           </div>
         </Card>
       )}

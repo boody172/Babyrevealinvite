@@ -22,6 +22,7 @@ const shared = {
   rsvp_open: true,
   show_results: true,
   ask_phone: true,
+  show_admin_login: false,
   extras: [],
   sections: SECTION_IDS.map((id) => ({ id, visible: true })),
   theme: DEFAULT_THEME,

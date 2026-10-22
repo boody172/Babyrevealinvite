@@ -82,6 +82,7 @@ export interface Settings {
   show_results: boolean;
   show_wishes?: boolean; // mirrored from sections for the SQL side
   ask_phone: boolean;
+  show_admin_login: boolean; // "admin login" entry in the guest menu (off: dashboard only via /admin)
   sections: { id: SectionId; visible: boolean }[];
   theme: Theme;
   labels: Partial<Record<Lang, Record<string, string>>>;
