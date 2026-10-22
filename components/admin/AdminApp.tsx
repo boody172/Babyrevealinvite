@@ -244,7 +244,7 @@ export default function AdminApp() {
           ) : (
             <AnimatePresence mode="wait">
               <motion.div key={`${tab}-${data.invitation.id}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-                {tab === "overview" && <Overview data={data} domain={current?.domain ?? null} onTab={setTab} />}
+                {tab === "overview" && <Overview data={data} onTab={setTab} />}
                 {tab === "guests" && <Guests data={data} token={token} reload={reload} toast={toast} />}
                 {tab === "content" && <Content s={settings} set={set} setS={setS} editLang={editLang} setEditLang={setEditLang} />}
                 {tab === "design" && <Design s={settings} set={set} token={token} toast={toast} />}

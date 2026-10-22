@@ -71,8 +71,6 @@ export const admin = {
   archive: (token: string, id: string, archived: boolean) =>
     rpc<void>("admin_invitation_archive", { p_token: token, p_id: id, p_archived: archived }),
   whoami: (token: string) => rpc<boolean>("admin_whoami", { p_token: token }),
-  setDomain: (token: string, id: string, domain: string | null) =>
-    rpc<void>("admin_invitation_set_domain", { p_token: token, p_id: id, p_domain: domain }),
   setHome: (token: string, id: string) => rpc<void>("admin_set_home", { p_token: token, p_id: id }),
   reveal: (token: string, id: string, gender: Gender | null, revealed: boolean) =>
     rpc<void>("admin_invitation_reveal", { p_token: token, p_id: id, p_gender: gender, p_revealed: revealed }),
